@@ -2,7 +2,7 @@
 
 A complete React and Django workflow: sign in, submit a PDF or Word document, read it inside the application, and record one final approval or rejection.
 
-**Delivery status:** implemented and tested locally. A cloud deployment has not been performed or verified because Vercel, Neon, and private Blob credentials have not been configured. Live URL and walkthrough recording: pending. Repository sharing and video recording are separate handover steps.
+**Live application:** [Papertrail](https://papertrail-document-approval.vercel.app/). Deployed and verified on Vercel with Neon PostgreSQL and private Vercel Blob on October 9, 2026. Walkthrough recording: pending. Repository publication and video recording are separate handover steps.
 
 ## Run locally
 
@@ -61,14 +61,14 @@ Latest verification: **45 backend tests, 8 frontend tests, and 7 browser tests p
 
 Backend tests mock storage. Browser tests use a separate SQLite database at `var/e2e.sqlite3` and private local files at `var/e2e-documents/`; they never contact Neon or Blob and never flush the application database. The fixed password in test sources applies only to this isolated test configuration, which uses a fast test-only password hasher. Never deploy `config.test_settings` or `config.e2e_settings`.
 
-Browser artifacts are written under the operating system's temporary directory in `papertrail-qa/` and `papertrail-playwright/`. The tested viewports are 1440×1000, 1920×1080, and 390×844 in Chromium. Cloud connectivity, Neon-specific concurrency, other browser engines, and arbitrary complex Word layouts remain unverified.
+Browser artifacts are written under the operating system's temporary directory in `papertrail-qa/` and `papertrail-playwright/`. The tested viewports are 1440×1000, 1920×1080, and 390×844 in Chromium. Production verification additionally covered real Neon/Blob uploads and byte-for-byte authorized downloads, CSRF, ownership isolation, reviewer permissions, oversized uploads, PDF/Word previews, saved decisions, conflicting/repeated decisions, combined search/filters, and logout. Neon-specific simultaneous-request concurrency, other browser engines, and arbitrary complex Word layouts remain unverified.
 
 ## Deploy to Vercel
 
 The root is one Django Vercel project. `pyproject.toml` selects `config.wsgi:application`; `vercel.json` runs `scripts/build.py`, which installs the locked frontend dependencies and builds Vite. Vercel then runs `collectstatic` and serves static assets from its CDN. Django serves the HTML shell and `/api` from the same origin. This follows [Vercel's native Django support](https://vercel.com/docs/frameworks/full-stack/django).
 
 1. Create a Neon Postgres database and obtain its pooled connection string with `sslmode=require`. Place the database near the Vercel function region.
-2. Create a **private** Vercel Blob store and connect it to the project. A public store is not suitable for this application. See [private Blob storage](https://vercel.com/docs/vercel-blob/private-storage).
+2. Create a **private** Vercel Blob store and connect it to the project. Enable the connection's read-write token environment variable: this Python adapter uses `BLOB_READ_WRITE_TOKEN`. A public store is not suitable for this application. See [private Blob storage](https://vercel.com/docs/vercel-blob/private-storage).
 3. Import this repository in Vercel with the Django framework, repository root as Root Directory, Node 22+, and Python 3.12. Do not select Vite as the deployment framework. Alternatively, use a recent authenticated Vercel CLI (`vercel deploy`; native Django requires CLI 50.38.0 or later).
 4. Configure the environment variables below for the intended deployment environment. Use separate Neon databases/branches and Blob stores for preview and production.
 5. Run migrations and seed accounts **explicitly before releasing**. Neither runs during build or request handling. Once the matching environment variables are securely loaded into the shell, run:
@@ -98,6 +98,8 @@ No variable containing a credential should have a `VITE_` prefix. The client nev
 
 The deployment check reports two optional HSTS warnings (`security.W005`, `security.W021`): subdomain enforcement and preload are intentionally unset until the production domain's policy is known. HTTPS redirect, secure cookies, and one-hour HSTS are already enabled outside local debug mode.
 
+The initial hosted demo uses Python 3.12, Node 24, Neon PostgreSQL 18 in AWS US East 1, and private Blob in IAD1. Migrations and the three seeded accounts were initialized before deployment. Demo credentials are stored in the operator's git-ignored `.env.production.local`; database configuration is in `.env.neon.local`. Neither file is uploaded with the source. The initial Preview environment shares the demo database and Blob store with Production; isolate these resources before using preview deployments for development or real documents. Use the public application URL above: Vercel's team/deployment URLs can require Vercel authentication.
+
 ### Deployment smoke check
 
 - Open the live login page, ensure built assets and the PDF worker load, and verify login/logout over HTTPS.
@@ -106,7 +108,7 @@ The deployment check reports two optional HSTS warnings (`security.W005`, `secur
 - Sign in as `reviewer`, find the pending submission, read it inside the app, approve it, and confirm a second/conflicting decision returns 409.
 - Sign in as `alex` again and confirm Approved persists. Repeat with Jamie's DOCX and a rejection.
 - Confirm the stored object is private, direct unauthenticated file API access fails, and 4 MB+ uploads are rejected. Check Vercel logs for storage or database failures.
-- Only after this check, replace the pending live URL and recording placeholders at the top of this README.
+- Record the verified live URL and verification date above; add the walkthrough URL when the recording is available.
 
 ## Architecture and decisions
 
@@ -229,11 +231,11 @@ scripts/                       Local setup, build, fixtures and test runner
 
 ## Production improvements
 
-Prioritized follow-up work: exercise the release on Neon/private Blob and test concurrent decisions against PostgreSQL; add a shared login/upload rate limiter; quarantine and scan uploads; add upload idempotency and orphan reconciliation; use indexed full-text search and cursor pagination if substring search or offset performance becomes a concern at much larger scale; add immutable audit events and operational alerts; configure retention, backups and restore procedures; virtualize long PDFs and test complex Word documents and additional browsers. Larger uploads would need a different direct-upload and authorization design instead of increasing this server-proxied limit.
+Prioritized follow-up work: isolate preview resources and test simultaneous decisions against PostgreSQL; add a shared login/upload rate limiter; quarantine and scan uploads; add upload idempotency and orphan reconciliation; use indexed full-text search and cursor pagination if substring search or offset performance becomes a concern at much larger scale; add immutable audit events and operational alerts; configure retention, backups and restore procedures; virtualize long PDFs and test complex Word documents and additional browsers. Larger uploads would need a different direct-upload and authorization design instead of increasing this server-proxied limit.
 
 ## AI-use disclosure
 
-OpenAI Codex assisted with architecture, code, tests, documentation, and browser debugging. Image generation produced a visual reference for the reviewer screen; the shipped UI uses HTML/CSS and icons, without generated document content or image assets. Library and deployment choices were checked against official documentation and installed SDK interfaces. Automated tests and rendered browser journeys were run; no cloud deployment or walkthrough recording is claimed. The applicant should review and be ready to explain all submitted code.
+OpenAI Codex assisted with architecture, code, tests, documentation, browser debugging, and deployment configuration. Image generation produced a visual reference for the reviewer screen; the shipped UI uses HTML/CSS and icons, without generated document content or image assets. Library and deployment choices were checked against official documentation and installed SDK interfaces. Automated tests, rendered browser journeys, and deployed Neon/private Blob checks were run. The walkthrough recording remains pending. The applicant should review and be ready to explain all submitted code.
 
 ## Five-minute walkthrough outline
 
