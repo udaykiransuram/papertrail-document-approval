@@ -2,7 +2,7 @@
 
 A complete React and Django workflow: sign in, submit a PDF or Word document, read it inside the application, and record one final approval or rejection.
 
-**Live application:** [Papertrail](https://papertrail-document-approval.vercel.app/). Deployed and verified on Vercel with Neon PostgreSQL and private Vercel Blob on October 9, 2026. Walkthrough recording: pending. Repository publication and video recording are separate handover steps.
+**Live application:** [Papertrail](https://papertrail-document-approval.vercel.app/). **Source:** [GitHub](https://github.com/udaykiransuram/papertrail-document-approval). Deployed and verified on Vercel with Neon PostgreSQL and private Vercel Blob on October 9, 2026. Walkthrough recording: pending.
 
 ## Run locally
 
