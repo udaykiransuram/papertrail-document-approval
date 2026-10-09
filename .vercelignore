@@ -1,0 +1,15 @@
+.venv
+node_modules
+frontend/dist
+staticfiles
+.git
+.DS_Store
+var
+*.sqlite3
+.env
+.env.*
+__pycache__
+.pytest_cache
+.ruff_cache
+test-results
+playwright-report
