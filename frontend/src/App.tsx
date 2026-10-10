@@ -12,11 +12,16 @@ export default function App() {
   const [listPreferences, setListPreferences] = useState<ListPreferences>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {
     api
       .session()
-      .then(setUser)
+      .then((session) => {
+        setUser(session.user);
+        setDemoEnabled(Boolean(session.demoEnabled));
+      })
       .catch((e) => setError(messageOf(e)))
       .finally(() => setLoading(false));
     const pop = () => setPath(window.location.pathname);
@@ -39,6 +44,23 @@ export default function App() {
       setError(messageOf(e));
     }
   }
+  async function switchDemoRole() {
+    if (!user?.is_demo || switching) return;
+    setSwitching(true);
+    setError("");
+    try {
+      const next = await api.demoLogin(
+        user.role === "reviewer" ? "submitter" : "reviewer",
+      );
+      setUser(next);
+      setListPreferences(undefined);
+      navigate("/");
+    } catch (e) {
+      setError(messageOf(e));
+    } finally {
+      setSwitching(false);
+    }
+  }
   if (loading)
     return (
       <div className="startup">
@@ -50,10 +72,12 @@ export default function App() {
       <>
         {error && <ErrorNotice message={error} />}
         <Login
+          demoEnabled={demoEnabled}
           onLogin={(next) => {
             setError("");
             setUser(next);
             setListPreferences(undefined);
+            navigate("/");
           }}
         />
       </>
@@ -64,6 +88,8 @@ export default function App() {
       user={user}
       onLogout={() => void logout()}
       onHome={() => navigate("/")}
+      onSwitchRole={demoEnabled ? () => void switchDemoRole() : undefined}
+      switching={switching}
     >
       {error && <ErrorNotice message={error} />}{" "}
       {id ? (

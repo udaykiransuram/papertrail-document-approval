@@ -20,6 +20,7 @@ from django.core.management import call_command
 call_command("migrate", interactive=False, verbosity=0)
 call_command("flush", interactive=False, verbosity=0)
 call_command("seed_users")
+call_command("seed_demo")
 from scripts.make_fixtures import make_fixtures
 
 fixtures = root / "workflow" / "tests" / "fixtures"

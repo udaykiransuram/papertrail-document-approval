@@ -25,7 +25,7 @@ def users(db, django_user_model):
         first_name="Morgan",
         last_name="Reed",
     )
-    reviewer.groups.add(Group.objects.create(name="reviewer"))
+    reviewer.groups.add(Group.objects.get_or_create(name="reviewer")[0])
     return alex, jamie, reviewer
 
 

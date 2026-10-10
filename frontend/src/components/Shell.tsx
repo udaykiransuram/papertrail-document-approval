@@ -6,15 +6,19 @@ export function Shell({
   user,
   onLogout,
   onHome,
+  onSwitchRole,
+  switching,
   children,
 }: {
   user: User;
   onLogout: () => void;
   onHome: () => void;
+  onSwitchRole?: () => void;
+  switching?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <div className={user.is_demo ? "app-shell demo-shell" : "app-shell"}>
       <header className="app-header">
         <button
           className="brand-button"
@@ -39,10 +43,31 @@ export function Shell({
           </button>
         </div>
       </header>
+      {user.is_demo && (
+        <aside className="demo-banner" aria-label="Demo workspace">
+          <p>
+            <strong>Shared demo</strong>
+            <span>
+              Use sample documents. Switch roles to try both sides of a review.
+            </span>
+          </p>
+          {onSwitchRole && (
+            <button
+              className="button secondary"
+              onClick={onSwitchRole}
+              disabled={switching}
+            >
+              {switching
+                ? "Switching…"
+                : `Switch to ${user.role === "reviewer" ? "Submitter" : "Reviewer"}`}
+            </button>
+          )}
+        </aside>
+      )}
       <main className="main">{children}</main>
       <footer className="app-footer">
         Papertrail<span>Every document. A clear next step.</span>
       </footer>
-    </>
+    </div>
   );
 }

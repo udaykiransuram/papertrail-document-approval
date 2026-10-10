@@ -14,15 +14,42 @@ export function validateFile(file: File) {
 export function UploadDialog({
   onClose,
   onCreated,
+  demo = false,
 }: {
   onClose: () => void;
   onCreated: (submission: Submission) => void;
+  demo?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadingSample, setLoadingSample] = useState(false);
+  async function useSample(kind: "pdf" | "docx") {
+    setBusy(true);
+    setLoadingSample(true);
+    setError("");
+    const filename =
+      kind === "pdf" ? "project-proposal.pdf" : "project-brief.docx";
+    try {
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}samples/${filename}`,
+      );
+      if (!response.ok)
+        throw new Error("The sample could not be loaded. Please try again.");
+      choose(new File([await response.blob()], filename));
+      setTitle(
+        (previous) =>
+          previous || (kind === "pdf" ? "Project proposal" : "Project brief"),
+      );
+    } catch (e) {
+      setError(messageOf(e));
+    } finally {
+      setBusy(false);
+      setLoadingSample(false);
+    }
+  }
   useEffect(() => {
     dialog.current?.showModal();
     return () => dialog.current?.close();
@@ -80,6 +107,31 @@ export function UploadDialog({
       </div>
       <form onSubmit={submit}>
         {error && <ErrorNotice message={error} />}
+        {demo && (
+          <div className="sample-picker">
+            <strong>Start with a sample</strong>
+            <p>Choose a document below, then submit it for review.</p>
+            <div>
+              <button
+                type="button"
+                className="button secondary"
+                disabled={busy}
+                onClick={() => void useSample("pdf")}
+              >
+                Use sample PDF
+              </button>
+              <button
+                type="button"
+                className="button secondary"
+                disabled={busy}
+                onClick={() => void useSample("docx")}
+              >
+                Use sample Word
+              </button>
+            </div>
+            {loadingSample && <span role="status">Loading sample…</span>}
+          </div>
+        )}
         <label htmlFor="document-title">Document title</label>
         <input
           id="document-title"
@@ -125,7 +177,9 @@ export function UploadDialog({
           )}
         </label>
         <p className="form-hint">
-          Your document will be sent to Morgan Reed for review.
+          {demo
+            ? "After submitting, switch to Reviewer to open this document and make a decision."
+            : "Your document will be sent to Morgan Reed for review."}
         </p>
         <div className="dialog-actions">
           <button
@@ -140,7 +194,11 @@ export function UploadDialog({
             className="button primary"
             disabled={busy || !file || !title.trim()}
           >
-            {busy ? "Uploading document…" : "Submit for review"}
+            {loadingSample
+              ? "Loading sample…"
+              : busy
+                ? "Uploading document…"
+                : "Submit for review"}
           </button>
         </div>
       </form>

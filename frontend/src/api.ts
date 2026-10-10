@@ -52,12 +52,12 @@ export async function request<T>(
     );
   return payload as T;
 }
-type Session = { user: User | null; csrfToken: string };
+type Session = { user: User | null; csrfToken: string; demoEnabled?: boolean };
 export const api = {
   async session() {
     const data = await request<Session>("/api/session/");
     csrfToken = data.csrfToken;
-    return data.user;
+    return data;
   },
   async login(username: string, password: string) {
     const data = await request<Session>("/api/login/", {
@@ -68,6 +68,14 @@ export const api = {
     return data.user!;
   },
   logout: () => request("/api/logout/", { method: "POST" }),
+  async demoLogin(role: User["role"]) {
+    const data = await request<Session>("/api/demo/login/", {
+      method: "POST",
+      body: JSON.stringify({ role }),
+    });
+    csrfToken = data.csrfToken;
+    return data.user!;
+  },
   list: (
     { page, status, sort, owner, search }: ListPreferences,
     signal?: AbortSignal,

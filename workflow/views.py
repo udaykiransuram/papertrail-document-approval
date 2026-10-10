@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.paginator import Paginator
 from django.db import DatabaseError
@@ -18,9 +19,10 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from . import services, storage
+from .demo import DEMO_ACCOUNTS
 from .errors import StorageUnavailable
 from .models import Submission
-from .permissions import is_reviewer, visible_submissions
+from .permissions import is_demo, is_reviewer, visible_submissions
 from .serializers import (
     CreateSubmissionSerializer,
     DecisionSerializer,
@@ -42,6 +44,7 @@ def session_user(user):
     return {
         **user_summary(user),
         "role": "reviewer" if is_reviewer(user) else "submitter",
+        "is_demo": is_demo(user),
     }
 
 
@@ -56,6 +59,7 @@ class SessionView(APIView):
                 if request.user.is_authenticated
                 else None,
                 "csrfToken": get_token(request),
+                "demoEnabled": settings.DEMO_ENABLED,
             }
         )
 
@@ -82,6 +86,39 @@ class LoginView(APIView):
                 {"message": "The username or password is incorrect."}, status=401
             )
         login(request, user)
+        return Response({"user": session_user(user), "csrfToken": get_token(request)})
+
+
+@method_decorator(csrf_protect, name="dispatch")
+@method_decorator(never_cache, name="dispatch")
+class DemoLoginView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+    def post(self, request):
+        if not settings.DEMO_ENABLED:
+            return Response({"message": "Demo access is not enabled."}, status=404)
+        role = request.data.get("role")
+        if not isinstance(role, str) or role not in DEMO_ACCOUNTS:
+            raise ValidationError({"role": ["Choose submitter or reviewer."]})
+        user = (
+            get_user_model()
+            .objects.filter(
+                username=DEMO_ACCOUNTS[role],
+                groups__name="demo",
+                is_active=True,
+                is_staff=False,
+                is_superuser=False,
+            )
+            .first()
+        )
+        if user is None or is_reviewer(user) != (role == "reviewer"):
+            return Response(
+                {"message": "The demo is not ready yet. Please try again shortly."},
+                status=503,
+            )
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         return Response({"user": session_user(user), "csrfToken": get_token(request)})
 
 

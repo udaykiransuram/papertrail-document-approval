@@ -7,3 +7,4 @@ DATABASES = {
     }
 }
 PRIVATE_DOCUMENT_ROOT = BASE_DIR / "var" / "e2e-documents"
+DEMO_ENABLED = True

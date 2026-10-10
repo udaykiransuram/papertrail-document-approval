@@ -3,11 +3,12 @@ import uuid
 from pathlib import PurePosixPath
 
 from django.utils import timezone
+from rest_framework.exceptions import NotFound
 
 from . import storage
 from .errors import Conflict
 from .models import Submission
-from .permissions import require_reviewer
+from .permissions import require_reviewer, visible_submissions
 from .validation import DOCX, PDF
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,8 @@ def create_submission(user, title, upload):
 
 def decide_submission(user, submission, status):
     require_reviewer(user)
+    if not visible_submissions(user).filter(pk=submission.pk).exists():
+        raise NotFound()
     # A single conditional UPDATE prevents lost updates, including simultaneous decisions.
     changed = Submission.objects.filter(
         pk=submission.pk, status=Submission.Status.PENDING

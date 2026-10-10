@@ -27,6 +27,7 @@ export type User = {
   name: string;
   username: string;
   role: "submitter" | "reviewer";
+  is_demo?: boolean;
 };
 export type Submission = {
   id: string;

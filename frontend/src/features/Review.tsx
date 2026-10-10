@@ -176,8 +176,9 @@ export function Review({
                   </>
                 ) : (
                   <p>
-                    Morgan Reed will review your document. Your status updates
-                    here when a decision is made.
+                    {user.is_demo
+                      ? "Switch to Reviewer to read this document and make a decision."
+                      : "Morgan Reed will review your document. Your status updates here when a decision is made."}
                   </p>
                 )
               ) : (
@@ -193,7 +194,9 @@ export function Review({
             <p className="privacy-note">
               <LockKeyhole size={17} />
               <span>
-                Only the submitter and reviewer can access this document.
+                {user.is_demo
+                  ? "Documents in this shared demo are visible to everyone trying it."
+                  : "Only the submitter and reviewer can access this document."}
               </span>
             </p>
           </aside>

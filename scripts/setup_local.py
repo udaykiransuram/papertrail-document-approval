@@ -39,6 +39,8 @@ if (
 
 for command in ("migrate", "seed_users"):
     subprocess.run([sys.executable, "manage.py", command], cwd=root, check=True)
+if os.getenv("DEMO_ENABLED") == "1":
+    subprocess.run([sys.executable, "manage.py", "seed_demo"], cwd=root, check=True)
 print(
     "Local setup complete. Usernames: alex, jamie, reviewer. Read their passwords from your private .env file."
 )

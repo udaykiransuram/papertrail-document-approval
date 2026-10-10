@@ -372,6 +372,7 @@ export function Dashboard({
       </section>
       {uploading && (
         <UploadDialog
+          demo={user.is_demo}
           onClose={() => setUploading(false)}
           onCreated={(item) => {
             setUploading(false);

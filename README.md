@@ -4,6 +4,16 @@ A complete React and Django workflow: sign in, submit a PDF or Word document, re
 
 **Live application:** [Papertrail](https://papertrail-document-approval.vercel.app/). **Source:** [GitHub](https://github.com/udaykiransuram/papertrail-document-approval). Deployed and verified on Vercel with Neon PostgreSQL and private Vercel Blob on October 9, 2026. Walkthrough recording: pending.
 
+## Try the demo
+
+Open [Papertrail](https://papertrail-document-approval.vercel.app/) and choose **Try as Submitter** or **Try as Reviewer**. No credentials are needed for the shared demo.
+
+1. As Submitter, choose **Submit document**, then **Use sample PDF** or **Use sample Word** and submit.
+2. Select **Switch to Reviewer**, open the document, and approve or reject it.
+3. Select **Switch to Submitter** to see the saved decision.
+
+The reviewer queue also starts with a sample PDF and Word document. Decisions are final; to try again, submit another sample. This is a shared workspace: use synthetic content only. Normal account sign-in remains available and its documents are isolated from the demo.
+
 ## Run locally
 
 Requirements: Python 3.12, Node.js 22+, pnpm 10.32.1, and a Chromium installation for the browser tests. Commands below use macOS/Linux; use WSL on Windows.
@@ -28,13 +38,13 @@ Open **http://127.0.0.1:8000**. The setup command creates a private, git-ignored
 | `jamie` | Jamie Chen | Submitter | `SEED_JAMIE_PASSWORD` |
 | `reviewer` | Morgan Reed | Reviewer | `SEED_REVIEWER_PASSWORD` |
 
-Passwords are real Django password hashes in the database. There is no registration or role selector. `seed_users` is idempotent: it updates the same three accounts and resets their passwords to the environment values. It validates all passwords before changing any accounts. Share hosted demo credentials privately with the evaluator.
+Passwords are real Django password hashes in the database. There is no registration. The role selector is limited to the two dedicated demo accounts. `seed_users` is idempotent: it updates the same three accounts and resets their passwords to the environment values. It validates all passwords before changing any accounts. Evaluators can use one-click demo access instead of receiving passwords.
 
 Local setup deliberately uses SQLite and files in `var/documents/` so the workflow runs without cloud accounts. It refuses to run against a configured cloud database. Production uses Neon and private Vercel Blob; local file storage is rejected on Vercel or when debug is disabled. Neither credentials nor uploaded files are committed.
 
 For frontend hot reload, keep Django running and run `pnpm dev` in a second terminal. Open **http://127.0.0.1:5173**. Vite proxies `/api` to Django, so browser requests remain same-origin. For the built frontend, rerun `pnpm build` and `collectstatic` after changes, then restart Django so its cached HTML shell references the new asset filenames.
 
-Representative documents are included in `workflow/tests/fixtures/`: a three-page PDF and two-page DOCX. Both contain synthetic project content, with no user documents or personal data.
+Representative documents are included in `workflow/tests/fixtures/` and bundled for the demo in `frontend/public/samples/`: a three-page PDF and two-page DOCX. Both contain synthetic project content, with no user documents or personal data.
 
 ## Test
 
@@ -47,8 +57,9 @@ pnpm test
 
 `pnpm test` runs pytest, Vitest, TypeScript compilation, the production Vite build, and Playwright. On Linux CI, use `pnpm exec playwright install --with-deps chromium` for browser system dependencies. Individual commands are `.venv/bin/python -m pytest`, `pnpm test:unit`, `pnpm build`, and `pnpm test:e2e` (requires a current build).
 
-Latest verification: **45 backend tests, 8 frontend tests, and 7 browser tests passed**. Coverage includes:
+Latest verification: **62 backend tests, 11 frontend tests, and 9 browser tests passed**. Coverage includes:
 
+- One-click demo entry, session rotation on role switch, sample PDF/Word journeys, idempotent demo setup, account-collision protection, and isolation of lists, counts, submitter choices, details, file bytes, and decisions between ordinary and demo accounts.
 - Real login/logout and CSRF, server-derived ownership, private file access, reviewer-only decisions, status filters, and idempotent seeding.
 - Valid and invalid file content, type and size limits, multiple files, missing title, DOCX external resources and embedded files.
 - Upload failure creates no submission; database failure triggers Blob cleanup; cleanup failure is logged; file-fetch failure is surfaced.
@@ -76,6 +87,8 @@ The root is one Django Vercel project. `pyproject.toml` selects `config.wsgi:app
    ```sh
    .venv/bin/python manage.py migrate --noinput
    .venv/bin/python manage.py seed_users
+   # For the public assignment demo only (DEMO_ENABLED=1):
+   .venv/bin/python manage.py seed_demo
    .venv/bin/python manage.py check --deploy
    ```
 
@@ -90,6 +103,7 @@ The root is one Django Vercel project. `pyproject.toml` selects `config.wsgi:app
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | Exact HTTPS app origins, comma-separated |
 | `DATABASE_URL` | Neon Postgres URL with TLS and credentials |
 | `DOCUMENT_STORAGE` | `vercel` |
+| `DEMO_ENABLED` | `1` for the public assignment demo; defaults to `0` |
 | `BLOB_READ_WRITE_TOKEN` | Server-only token for the private store |
 | `SEED_ALEX_PASSWORD`, `SEED_JAMIE_PASSWORD`, `SEED_REVIEWER_PASSWORD` | Distinct strong passwords used by the explicit seed command |
 | `DJANGO_SETTINGS_MODULE` | Leave unset or set `config.settings`; never use test settings |
@@ -121,17 +135,25 @@ Vercel: Django REST API + HTML shell     Vercel CDN: built JS/CSS/fonts/PDF work
         └── Private Vercel Blob: original document bytes
 ```
 
-The `Submission` model stores UUID, title, owner, private Blob path, original filename, MIME type, byte size, status, submission timestamp, reviewer, and review timestamp. Indexes support owner/date and status/date lookups. A database constraint keeps pending/final review metadata consistent. The reviewer role comes from a Django group. There is one seeded reviewer, who handles every submission; there is no assignment UI.
+The `Submission` model stores UUID, title, owner, private Blob path, original filename, MIME type, byte size, status, submission timestamp, reviewer, and review timestamp. Indexes support owner/date and status/date lookups. A database constraint keeps pending/final review metadata consistent. The reviewer role comes from a Django group. The ordinary reviewer handles ordinary submissions; the demo reviewer handles only demo submissions. There is no assignment UI.
 
 Upload validation runs in the browser for fast feedback and again on the server using actual bytes. Supported files are PDF and modern `.docx`, maximum **4,000,000 bytes**. Legacy `.doc`, encrypted files, malformed documents, macros, embedded objects, and externally linked Word resources are rejected. Ordinary Word hyperlinks are allowed but inactive in the preview. ZIP expansion is capped. The 4 MB cap leaves room for normal multipart overhead under [Vercel's 4.5 MB function payload limit](https://vercel.com/docs/functions/limitations) and keeps authenticated file responses within that limit. Oversized overall requests may be rejected by the platform before Django runs.
 
 The server creates an unguessable UUID storage path and uploads through the official Python Blob SDK with `access="private"`. Only a successful upload is followed by database persistence. If persistence fails, the server attempts to delete the new object; cleanup failures log the object path for recovery. A process crash between upload and persistence can still leave an orphan; reconciliation is a production improvement.
 
-Every list, detail, and file request is scoped to the signed-in owner, unless the user is the reviewer. Inaccessible IDs return 404. Document content is fetched by Django and returned with `Cache-Control: private, no-store`; the browser renders those bytes. Filenames are not used as filesystem paths. No public document URLs are exposed.
+Every list, detail, and file request is scoped to the signed-in owner, unless the user is the reviewer for that workspace. Inaccessible IDs return 404. Document content is fetched by Django and returned with `Cache-Control: private, no-store`; the browser renders those bytes. Filenames are not used as filesystem paths. No public document URLs are exposed.
 
 Decisions use one SQL update equivalent to `UPDATE ... WHERE id = ? AND status = 'pending'`. One updated row wins; zero rows returns 409. This is atomic in PostgreSQL, so concurrent requests cannot overwrite a final decision. Submitters cannot decide, and reviewers cannot submit through the API. Accepted transitions are only `pending → approved` or `pending → rejected`.
 
 Session authentication uses Django's database-backed sessions, password hashing, HttpOnly cookies, SameSite=Lax, and CSRF checks, including on login. Production cookies are secure and HTTPS is enforced. Database connections use `CONN_MAX_AGE=0` with server-side cursors disabled for the pooled Neon connection. Login throttling is a small in-process guard, not distributed brute-force protection.
+
+### Public demo access
+
+`DEMO_ENABLED=1` exposes the one-click entry controls and `POST /api/demo/login/` with `{"role":"submitter"}` or `{"role":"reviewer"}`. The endpoint requires CSRF and uses the same session cookies and login throttle as password login. It accepts only those fixed role names, and only signs in active, non-privileged accounts carrying the `demo` group. No passwords or credentials are embedded in the frontend.
+
+Run `manage.py seed_demo` explicitly against the intended database and storage. If storage credentials are only available in the hosted runtime, use `--accounts-only` and submit the two bundled samples through the hosted demo afterward. It creates `demo_submitter` and `demo_reviewer` with unusable passwords, and uploads the two bundled synthetic samples through the normal storage service. Rerunning it preserves sample decisions and does not duplicate the samples; it refuses collisions with ordinary or privileged accounts. To enable this in an existing local setup, add `DEMO_ENABLED=1` to `.env`, run the command, and restart Django.
+
+Both demo identities intentionally share one public evaluation workspace. Existing ordinary accounts remain separate. Setting `DEMO_ENABLED=0` disables new demo logins and role switches; it does not revoke existing sessions. For permanent shutdown, deactivate both demo accounts as well. Production use should disable demo entry; a longer-lived public demo should add storage quotas, distributed throttling, and expiry/reset of synthetic data.
 
 ### Frontend behavior
 
