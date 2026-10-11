@@ -89,11 +89,16 @@ export default function DocxPreview({
           iframe.current?.contentDocument?.querySelector<HTMLElement>(
             "section.docx",
           );
-        if (firstPage)
-          onSize({
-            width: firstPage.offsetWidth,
-            height: firstPage.offsetHeight,
-          });
+        if (!firstPage) {
+          onError(
+            "This Word document could not be rendered. Please try another document.",
+          );
+          return;
+        }
+        onSize({
+          width: firstPage.offsetWidth,
+          height: firstPage.offsetHeight,
+        });
         resize();
         onReady(true);
       }}

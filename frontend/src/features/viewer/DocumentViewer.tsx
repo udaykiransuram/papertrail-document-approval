@@ -14,15 +14,21 @@ const DocxPreview = lazy(() => import("./DocxPreview"));
 
 export default function DocumentViewer({
   item,
+  file,
   onReady,
 }: {
-  item: Submission;
   onReady: (ready: boolean) => void;
-}) {
+} & ({ item: Submission; file?: never } | { file: File; item?: never })) {
+  const filename = file ? file.name : item.original_filename;
+  const size = file ? file.size : item.size;
+  const isPdf = file
+    ? /\.pdf$/i.test(file.name)
+    : item.content_type === "application/pdf";
+  const fileUrl = item?.file_url;
   const [data, setData] = useState<ArrayBuffer | null>(null);
   const [error, setError] = useState("");
   const [zoom, setZoom] = useState(100);
-  const [mode, setMode] = useState<SizingMode>("auto");
+  const [mode, setMode] = useState<SizingMode>(file ? "page" : "auto");
   const [pageSize, setPageSize] = useState<PageSize>({
     width: 816,
     height: 1056,
@@ -59,7 +65,9 @@ export default function DocumentViewer({
     onReady(false);
     (async () => {
       try {
-        const bytes = await api.document(item.file_url, controller.signal);
+        const bytes = file
+          ? await file.arrayBuffer()
+          : await api.document(fileUrl!, controller.signal);
         if (!controller.signal.aborted) setData(bytes);
       } catch (e) {
         if (!controller.signal.aborted)
@@ -73,7 +81,7 @@ export default function DocumentViewer({
       }
     })();
     return () => controller.abort();
-  }, [item.file_url, attempt, onReady]);
+  }, [fileUrl, file, attempt, onReady]);
   function failure(message: string) {
     setError(message);
     onReady(false);
@@ -82,12 +90,11 @@ export default function DocumentViewer({
     <section className="viewer-panel" aria-label="Document viewer">
       <div className="viewer-toolbar">
         <div className="viewer-filename">
-          <FileIcon name={item.original_filename} />
+          <FileIcon name={filename} />
           <span>
-            <strong>{item.original_filename}</strong>
+            <strong>{filename}</strong>
             <small>
-              {item.content_type === "application/pdf" ? "PDF" : "DOCX"} ·{" "}
-              {formatBytes(item.size)}
+              {isPdf ? "PDF" : "DOCX"} · {formatBytes(size)}
             </small>
           </span>
         </div>
@@ -143,10 +150,14 @@ export default function DocumentViewer({
             </button>
           </div>
         ) : !data ? (
-          <Loading label="Loading private document…" />
+          <Loading
+            label={
+              file ? "Loading document preview…" : "Loading private document…"
+            }
+          />
         ) : (
           <Suspense fallback={<Loading label="Rendering document…" />}>
-            {item.content_type === "application/pdf" ? (
+            {isPdf ? (
               <PdfPreview
                 data={data}
                 width={documentWidth}

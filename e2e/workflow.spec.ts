@@ -19,7 +19,22 @@ async function upload(page: Page, title: string, name: string) {
     .click();
   await page.getByLabel("Document title").fill(title);
   await page.locator("input[type=file]").setInputFiles(fixture(name));
+  await page
+    .getByRole("button", { name: "Preview document", exact: true })
+    .click();
   await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "My submissions" }),
+  ).toBeVisible();
+  await expect(page.locator(".queue-decision-notice")).toContainText(
+    "submitted successfully",
+  );
+  await expect(page.locator("tbody tr").first()).toContainText(title);
+  // Opening a saved document is now an explicit action from the list.
+  await page
+    .getByRole("button", { name: `Open ${title}`, exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
@@ -82,16 +97,16 @@ test("PDF: submit, inspect three pages, approve, and track status", async ({
   await expect
     .poll(
       async () =>
-        (await page.locator(".react-pdf__Page canvas").first().boundingBox())!
-          .width,
+        (await page.locator(".react-pdf__Page canvas").first().boundingBox())
+          ?.width ?? Infinity,
     )
     .toBeLessThanOrEqual(816);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await expect
     .poll(
       async () =>
-        (await page.locator(".react-pdf__Page canvas").first().boundingBox())!
-          .width,
+        (await page.locator(".react-pdf__Page canvas").first().boundingBox())
+          ?.width ?? Infinity,
     )
     .toBeLessThanOrEqual(816);
   await page.getByLabel("Document size").selectOption("page");
@@ -102,9 +117,11 @@ test("PDF: submit, inspect three pages, approve, and track status", async ({
         .first()
         .boundingBox())!;
       const viewport = (await page.locator(".document-canvas").boundingBox())!;
-      return (
+      return Boolean(
+        paper &&
+        viewport &&
         paper.height <= viewport.height - 40 &&
-        paper.width <= viewport.width - 40
+        paper.width <= viewport.width - 40,
       );
     })
     .toBe(true);
@@ -112,8 +129,8 @@ test("PDF: submit, inspect three pages, approve, and track status", async ({
   await expect
     .poll(
       async () =>
-        (await page.locator(".react-pdf__Page canvas").first().boundingBox())!
-          .width,
+        (await page.locator(".react-pdf__Page canvas").first().boundingBox())
+          ?.width ?? 0,
     )
     .toBeGreaterThan(1000);
   await page.setViewportSize({ width: 1440, height: 1000 });

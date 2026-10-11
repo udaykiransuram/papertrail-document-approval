@@ -65,6 +65,7 @@ export function Dashboard({
   const [deciding, setDeciding] = useState(false);
   const [decisionError, setDecisionError] = useState("");
   const [announcement, setAnnouncement] = useState("");
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const decisionNotice = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (announcement) decisionNotice.current?.focus();
@@ -371,7 +372,12 @@ export function Dashboard({
               </thead>
               <tbody>
                 {visible.map((item) => (
-                  <tr key={item.id}>
+                  <tr
+                    key={item.id}
+                    className={
+                      item.id === createdId ? "submission-created" : undefined
+                    }
+                  >
                     <td>
                       <button
                         className="document-link"
@@ -380,6 +386,11 @@ export function Dashboard({
                         <FileIcon name={item.original_filename} />
                         <span>
                           <strong>{item.title}</strong>
+                          {item.id === createdId && (
+                            <span className="new-submission-label">
+                              Just submitted
+                            </span>
+                          )}
                           <small>{item.original_filename}</small>
                         </span>
                       </button>
@@ -463,7 +474,17 @@ export function Dashboard({
                       View reviewed documents
                     </button>
                   )}
-                  {user.is_demo && <StartSampleReview onOpen={onOpen} />}
+                  {user.is_demo && user.role === "reviewer" && (
+                    <StartSampleReview onOpen={onOpen} />
+                  )}
+                  {user.role === "submitter" && (
+                    <button
+                      className="button secondary"
+                      onClick={() => setUploading(true)}
+                    >
+                      Submit a document
+                    </button>
+                  )}
                 </div>
               )}
               {!emptyPending && hasFilters && (
@@ -512,7 +533,20 @@ export function Dashboard({
           onClose={() => setUploading(false)}
           onCreated={(item) => {
             setUploading(false);
-            onOpen(item.id);
+            setCreatedId(item.id);
+            setAnnouncement(
+              `“${item.title}” submitted successfully. It’s pending review.`,
+            );
+            setSearchInput("");
+            setQuery({
+              page: 1,
+              status: "all",
+              sort: "newest",
+              owner: "",
+              search: "",
+            });
+            setLoading(true);
+            setRefreshVersion((v) => v + 1);
           }}
         />
       )}

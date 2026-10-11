@@ -296,6 +296,28 @@ test("empty pending queue offers reviewed documents and fresh samples, but ordin
 }) => {
   await enterDemo(page);
   await finishPendingFixtures(page);
+  await page.getByRole("button", { name: "Switch to Submitter" }).click();
+  await expect(
+    page.getByRole("heading", { name: "My submissions" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /^Pending/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "No documents awaiting review." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Try a sample document" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Submit a document", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Submit a document" }),
+  ).toContainText("Step 1 of 2");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("button", { name: "Switch to Reviewer" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Review queue" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "You’re all caught up." }),
   ).toBeVisible();
@@ -308,11 +330,9 @@ test("empty pending queue offers reviewed documents and fresh samples, but ordin
       .getByRole("button", { name: "Try a sample document" }),
   ).toBeVisible();
   await expect(
-    page
-      .locator(".queue-heading")
-      .getByRole("button", {
-        name: /^(Start a sample review|Try a sample document)$/,
-      }),
+    page.locator(".queue-heading").getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
   ).toHaveCount(0);
   await page
     .getByRole("searchbox", { name: "Search documents" })

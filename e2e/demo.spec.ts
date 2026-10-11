@@ -50,9 +50,11 @@ for (const kind of ["PDF", "Word"] as const) {
       path: path.join(evidence, `demo-sample-${kind}.png`),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Submit for review" }).click();
+    await page
+      .getByRole("button", { name: "Preview document", exact: true })
+      .click();
     await expect(
-      page.getByRole("heading", { name: title, exact: true }),
+      page.getByRole("heading", { name: "Preview your submission" }),
     ).toBeVisible();
     await expect(
       kind === "PDF"
@@ -61,12 +63,21 @@ for (const kind of ["PDF", "Word"] as const) {
             .frameLocator('iframe[title="Word document preview"]')
             .locator("section.docx"),
     ).toHaveCount(kind === "PDF" ? 3 : 2);
-    const detailUrl = page.url();
+    await page.getByRole("button", { name: "Submit for review" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "My submissions" }),
+    ).toBeVisible();
+    await expect(page.locator("tbody tr").first()).toContainText(title);
+    await expect(page.locator(".queue-decision-notice")).toContainText(
+      "pending review",
+    );
     await page.getByRole("button", { name: "Switch to Reviewer" }).click();
     await expect(
       page.getByRole("heading", { name: "Review queue" }),
     ).toBeVisible();
     await page.locator(".document-link").filter({ hasText: title }).click();
+    const detailUrl = page.url();
     await expect(
       kind === "PDF"
         ? page.locator(".react-pdf__Page canvas")

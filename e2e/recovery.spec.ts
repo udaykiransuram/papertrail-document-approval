@@ -148,6 +148,9 @@ for (const failure of ["server", "network"] as const) {
       .click();
     await page.getByRole("button", { name: "Use sample PDF" }).click();
     await page.getByLabel("Document title").fill(title);
+    await page
+      .getByRole("button", { name: "Preview document", exact: true })
+      .click();
     await page.route(
       "**/api/submissions/",
       (route) =>
@@ -169,10 +172,15 @@ for (const failure of ["server", "network"] as const) {
         ? "storage is temporarily unavailable"
         : "Could not connect",
     );
+    await expect(page.locator(".upload-preview-title")).toContainText(title);
+    await page.getByRole("button", { name: "Back to details" }).click();
     await expect(page.getByLabel("Document title")).toHaveValue(title);
     await expect(page.locator(".dropzone strong")).toHaveText(
       "project-proposal.pdf",
     );
+    await page
+      .getByRole("button", { name: "Preview document", exact: true })
+      .click();
     await expect(
       page.getByRole("button", { name: "Submit for review" }),
     ).toBeEnabled();
@@ -187,9 +195,11 @@ for (const failure of ["server", "network"] as const) {
       ),
     ).toBe(true);
     await page.getByRole("button", { name: "Submit for review" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: title, exact: true }),
+      page.getByRole("heading", { name: "My submissions" }),
     ).toBeVisible();
+    await expect(page.locator("tbody tr").first()).toContainText(title);
     expect(await savedRows(page, title)).toHaveLength(1);
   });
 }
