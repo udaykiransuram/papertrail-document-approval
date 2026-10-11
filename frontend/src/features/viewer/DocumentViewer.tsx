@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ChevronDown, Minus, Plus, RotateCw } from "lucide-react";
 import { documentScale, type PageSize, type SizingMode } from "./sizing";
+import { api, ApiError } from "../../api";
 import {
   ErrorNotice,
   FileIcon,
@@ -58,20 +59,16 @@ export default function DocumentViewer({
     onReady(false);
     (async () => {
       try {
-        const response = await fetch(item.file_url, {
-          credentials: "same-origin",
-          signal: controller.signal,
-        });
-        if (!response.ok)
-          throw new Error(
-            "The document could not be loaded. Please try again.",
-          );
-        const bytes = await response.arrayBuffer();
+        const bytes = await api.document(item.file_url, controller.signal);
         if (!controller.signal.aborted) setData(bytes);
       } catch (e) {
         if (!controller.signal.aborted)
           setError(
-            e instanceof Error ? e.message : "The preview could not be loaded.",
+            e instanceof ApiError
+              ? "The document could not be loaded. Please try again."
+              : e instanceof Error
+                ? e.message
+                : "The preview could not be loaded.",
           );
       }
     })();

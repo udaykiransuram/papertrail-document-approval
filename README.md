@@ -57,7 +57,7 @@ pnpm test
 
 `pnpm test` runs pytest, Vitest, TypeScript compilation, the production Vite build, and Playwright. On Linux CI, use `pnpm exec playwright install --with-deps chromium` for browser system dependencies. Individual commands are `.venv/bin/python -m pytest`, `pnpm test:unit`, `pnpm build`, and `pnpm test:e2e` (requires a current build).
 
-Latest verification: **62 backend tests, 11 frontend tests, and 9 browser tests passed**. Coverage includes:
+Latest verification: **68 backend tests, 15 frontend tests, and 18 browser tests passed**. Coverage includes:
 
 - One-click demo entry, session rotation on role switch, sample PDF/Word journeys, idempotent demo setup, account-collision protection, and isolation of lists, counts, submitter choices, details, file bytes, and decisions between ordinary and demo accounts.
 - Real login/logout and CSRF, server-derived ownership, private file access, reviewer-only decisions, status filters, and idempotent seeding.
@@ -70,9 +70,21 @@ Latest verification: **62 backend tests, 11 frontend tests, and 9 browser tests 
 - Document searches match title or filename before pagination and preserve ownership; tests cover whitespace, case-insensitivity, literal special characters, empty results, scoped counts, and query-length validation.
 - Searchable submitter keyboard navigation, name/username matching, empty results, Escape and outside dismissal, selection and clearing. PDF/Word sizing checks cover automatic width, actual zoom, full-page fitting, and wide/mobile viewports.
 
-Backend tests mock storage. Browser tests use a separate SQLite database at `var/e2e.sqlite3` and private local files at `var/e2e-documents/`; they never contact Neon or Blob and never flush the application database. The fixed password in test sources applies only to this isolated test configuration, which uses a fast test-only password hasher. Never deploy `config.test_settings` or `config.e2e_settings`.
+Recovery browser tests remove the real session cookie, abort or reject uploads, interrupt demo role switching, and save a decision through a separate request before the stale page acts. They verify reauthentication, retained upload inputs, unchanged roles on failure, saved outcomes, retry controls, and recovery when conflict refresh also fails. Permission errors are distinguished from expired sessions, including private document reads.
+
+Backend tests mock storage. Browser tests use a separate SQLite database at `var/e2e.sqlite3` and private local files at `var/e2e-documents/`; they never contact Neon or Blob and never flush the application database. The fixed password in test sources applies only to this isolated test configuration, which uses a fast test-only password hasher. The browser configuration also raises the login throttle to 1,000/minute because all test sessions use one IP; production remains at 20/minute. Never deploy `config.test_settings` or `config.e2e_settings`.
 
 Browser artifacts are written under the operating system's temporary directory in `papertrail-qa/` and `papertrail-playwright/`. The tested viewports are 1440×1000, 1920×1080, and 390×844 in Chromium. Production verification additionally covered real Neon/Blob uploads and byte-for-byte authorized downloads, CSRF, ownership isolation, reviewer permissions, oversized uploads, PDF/Word previews, saved decisions, conflicting/repeated decisions, combined search/filters, and logout. Neon-specific simultaneous-request concurrency, other browser engines, and arbitrary complex Word layouts remain unverified.
+
+### Automatic GitHub checks
+
+[Tests](.github/workflows/tests.yml) runs on every push and pull request, and can also be started manually from the repository’s Actions tab. It installs the locked dependencies on Ubuntu 24.04 with Python 3.12, Node 22, and pnpm 10.32.1; checks for missing migrations; then runs the same `pnpm test` command used locally. Chromium and its system dependencies are installed using [Playwright’s CI setup](https://playwright.dev/docs/ci).
+
+The workflow uses read-only repository permissions and no application or cloud secrets. Tests run against temporary SQLite and local document storage. Logs, screenshots, and failure traces are retained as a `test-evidence` artifact for seven days, including when tests fail. New commits cancel superseded runs on the same branch or pull request. Focused tests (`test.only`) fail CI rather than silently skipping the rest of the suite.
+
+Failure traces keep action logs and screenshots. DOM snapshots are disabled because their recording scripts cannot run inside the script-free Word preview sandbox.
+
+Vercel’s Git integration deploys independently of these checks. This workflow does not configure branch protection or make a successful test run a prerequisite for deployment. Configure those separately if release gating is needed. Real PostgreSQL concurrency, load testing, additional browser engines, automated accessibility auditing, measured line/branch coverage, and scheduled cloud integration checks remain outside this suite.
 
 ## Deploy to Vercel
 
@@ -202,7 +214,7 @@ Example: `GET /api/submissions/?status=pending&owner=1&sort=oldest&page=2` retur
 
 `results` is abbreviated above; this example's second page contains five submission objects. `count` applies to the current status, search, and owner filters; `counts` includes each status under the current search and owner filters across all pages. For reviewers, `submitters` includes document owners across the permitted queue, independent of active filters. For submitters that field is empty.
 
-Errors use `{message, fields?}`. Typical statuses: 400 validation, 401 bad login, 403 missing authentication/CSRF/role permission, 404 unavailable submission, 409 already reviewed, 429 login throttled, and 503 storage/persistence unavailable. DRF session authentication intentionally uses 403 for unauthenticated protected endpoints.
+Errors use `{message, code?, fields?}`. Typical statuses: 400 validation, 401 bad login, 403 missing authentication/CSRF/role permission, 404 unavailable submission, 409 already reviewed, 429 login throttled, and 503 storage/persistence unavailable. DRF session authentication intentionally uses 403 for unauthenticated protected endpoints. Their `not_authenticated` code returns the browser to sign-in and refreshes the CSRF token; a `permission_denied` error leaves a valid session intact.
 
 ### Example API client
 

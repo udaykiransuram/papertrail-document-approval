@@ -5,6 +5,7 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
+  forbidOnly: Boolean(process.env.CI),
   timeout: 45000,
   reporter: "list",
   outputDir: path.join(tmpdir(), "papertrail-playwright"),
@@ -12,6 +13,9 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:8011",
     viewport: { width: 1440, height: 1000 },
     screenshot: "only-on-failure",
+    // DOM snapshots inject scripts into the intentionally script-free DOCX iframe.
+    // Keep action traces and screenshots without weakening the document sandbox.
+    trace: { mode: "retain-on-failure", snapshots: false, screenshots: true },
   },
   webServer: {
     command:

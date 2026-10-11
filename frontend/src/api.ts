@@ -16,9 +16,11 @@ export class ApiError extends Error {
   }
 }
 let csrfToken = "";
+export const sessionEvents = new EventTarget();
 export async function request<T>(
   path: string,
   options: RequestInit = {},
+  responseType: "json" | "arrayBuffer" = "json",
 ): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body && !(options.body instanceof FormData))
@@ -40,8 +42,11 @@ export async function request<T>(
       0,
     );
   }
-  const payload = await response.json().catch(() => null);
-  if (!response.ok)
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    // A forbidden operation or invalid CSRF token must not end a valid session.
+    if (payload?.code === "not_authenticated")
+      sessionEvents.dispatchEvent(new Event("expired"));
     throw new ApiError(
       payload?.message ||
         (response.status === 413
@@ -50,7 +55,12 @@ export async function request<T>(
       response.status,
       payload?.fields,
     );
-  return payload as T;
+  }
+  return (
+    responseType === "arrayBuffer"
+      ? await response.arrayBuffer()
+      : await response.json().catch(() => null)
+  ) as T;
 }
 type Session = { user: User | null; csrfToken: string; demoEnabled?: boolean };
 export const api = {
@@ -88,6 +98,8 @@ export const api = {
   },
   detail: (id: string, signal?: AbortSignal) =>
     request<Submission>(`/api/submissions/${id}/`, { signal }),
+  document: (url: string, signal?: AbortSignal) =>
+    request<ArrayBuffer>(url, { signal }, "arrayBuffer"),
   create: (title: string, file: File) => {
     const data = new FormData();
     data.append("title", title);

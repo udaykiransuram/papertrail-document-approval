@@ -1,0 +1,64 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Backend, frontend and browser tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      DJANGO_DEBUG: "1"
+      DOCUMENT_STORAGE: local
+      DATABASE_URL: ""
+      TMPDIR: ${{ runner.temp }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - name: Install locked dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements.lock
+          pnpm install --frozen-lockfile
+      - name: Install Chromium and system dependencies
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Check for missing migrations
+        run: .venv/bin/python manage.py makemigrations --check --dry-run --settings=config.test_settings
+      - name: Run the complete test suite
+        shell: bash
+        run: pnpm test 2>&1 | tee "$RUNNER_TEMP/test-output.log"
+      - name: Keep test logs, screenshots and failure traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-evidence-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/test-output.log
+            ${{ runner.temp }}/papertrail-qa/
+            ${{ runner.temp }}/papertrail-playwright/
+          retention-days: 7
+          if-no-files-found: ignore

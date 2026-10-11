@@ -19,7 +19,10 @@ def exception_handler(exc, context):
     if response is not None:
         payload = response.data
         if isinstance(payload, dict) and "detail" in payload:
-            response.data = {"message": str(payload["detail"])}
+            response.data = {
+                "message": str(payload["detail"]),
+                "code": getattr(payload["detail"], "code", "error"),
+            }
         else:
             response.data = {
                 "message": "Please check the highlighted fields.",

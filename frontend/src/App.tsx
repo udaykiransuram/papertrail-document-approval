@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, messageOf } from "./api";
+import { api, messageOf, sessionEvents } from "./api";
 import { ErrorNotice, Loading } from "./components/ui";
 import { Shell } from "./components/Shell";
 import { Dashboard } from "./features/Dashboard";
@@ -16,6 +16,33 @@ export default function App() {
   const [switching, setSwitching] = useState(false);
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {
+    let disposed = false;
+    let recoveringSession = false;
+    function expired() {
+      if (recoveringSession) return;
+      recoveringSession = true;
+      setUser(null);
+      setListPreferences(undefined);
+      setError("Your session has expired. Sign in again to continue.");
+      setLoading(true);
+      // Fetch a fresh CSRF token before enabling either sign-in method.
+      api
+        .session()
+        .then((session) => {
+          if (!disposed) setDemoEnabled(Boolean(session.demoEnabled));
+        })
+        .catch(() => {
+          if (!disposed)
+            setError(
+              "Your session has expired. Refresh the page to sign in again.",
+            );
+        })
+        .finally(() => {
+          recoveringSession = false;
+          if (!disposed) setLoading(false);
+        });
+    }
+    sessionEvents.addEventListener("expired", expired);
     api
       .session()
       .then((session) => {
@@ -26,7 +53,11 @@ export default function App() {
       .finally(() => setLoading(false));
     const pop = () => setPath(window.location.pathname);
     window.addEventListener("popstate", pop);
-    return () => window.removeEventListener("popstate", pop);
+    return () => {
+      disposed = true;
+      window.removeEventListener("popstate", pop);
+      sessionEvents.removeEventListener("expired", expired);
+    };
   }, []);
   function navigate(next: string) {
     window.history.pushState({}, "", next);

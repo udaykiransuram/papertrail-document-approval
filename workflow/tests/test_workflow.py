@@ -333,3 +333,32 @@ def test_write_endpoints_require_csrf(users, pdf, storage, submission):
         == 403
     )
     assert Submission.objects.get(pk=submission["id"]).status == "pending"
+
+
+@pytest.mark.parametrize("action", ["list", "detail", "file", "decision", "upload"])
+def test_expired_session_errors_are_distinct_from_permission_failures(
+    submission, action
+):
+    client = APIClient()
+    base = f"/api/submissions/{submission['id']}/"
+    if action in ("decision", "upload"):
+        response = client.post(
+            base + "decision/" if action == "decision" else "/api/submissions/", {}
+        )
+    else:
+        response = client.get(
+            {"list": "/api/submissions/", "detail": base, "file": base + "file/"}[
+                action
+            ]
+        )
+    assert response.status_code == 403
+    assert response.data["code"] == "not_authenticated"
+
+
+def test_forbidden_decision_does_not_report_session_expired(client, users, submission):
+    client.force_authenticate(users[0])
+    response = client.post(
+        f"/api/submissions/{submission['id']}/decision/", {"status": "approved"}
+    )
+    assert response.status_code == 403
+    assert response.data["code"] == "permission_denied"

@@ -50,6 +50,9 @@ export function Review({
         setConfirmation(null);
         try {
           setItem(await api.detail(id));
+          setError(
+            "This submission has already been reviewed. The saved decision is shown below.",
+          );
         } catch {
           setError(
             "This submission was already reviewed. Return to the list to refresh its status.",
