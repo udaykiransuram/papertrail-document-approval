@@ -12,5 +12,5 @@ DEMO_ENABLED = True
 # limit unchanged while allowing independent recovery tests to share this server.
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,
-    "DEFAULT_THROTTLE_RATES": {"login": "1000/minute"},
+    "DEFAULT_THROTTLE_RATES": {"login": "1000/minute", "demo_sample": "1000/minute"},
 }

@@ -127,7 +127,7 @@ test("PDF: submit, inspect three pages, approve, and track status", async ({
     .click();
   await page.getByRole("button", { name: "Confirm approval" }).click();
   await expect(
-    page.getByRole("heading", { name: "Review complete" }),
+    page.getByRole("region", { name: "Review complete" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
   await login(page, "alex");
@@ -242,7 +242,7 @@ test("DOCX: preview inside the app, zoom, reject, and track status", async ({
     .click();
   await page.getByRole("button", { name: "Confirm rejection" }).click();
   await expect(
-    page.getByRole("heading", { name: "Review complete" }),
+    page.getByRole("region", { name: "Review complete" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
   await login(page, "jamie");

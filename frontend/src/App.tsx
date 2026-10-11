@@ -124,7 +124,14 @@ export default function App() {
     >
       {error && <ErrorNotice message={error} />}{" "}
       {id ? (
-        <Review key={id} id={id} user={user} onBack={() => navigate("/")} />
+        <Review
+          key={id}
+          id={id}
+          user={user}
+          preferences={listPreferences}
+          onBack={() => navigate("/")}
+          onOpen={(next) => navigate(`/submissions/${next}`)}
+        />
       ) : (
         <Dashboard
           key={user.id}

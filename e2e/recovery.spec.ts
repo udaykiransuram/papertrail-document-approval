@@ -255,7 +255,7 @@ test("a stale decision shows the saved result and cannot overwrite it", async ({
   await page.getByRole("button", { name: "Confirm rejection" }).click();
   await expect(page.getByRole("alert")).toContainText("already been reviewed");
   await expect(
-    page.getByRole("heading", { name: "Review complete" }),
+    page.getByRole("region", { name: "Review complete" }),
   ).toBeVisible();
   await expect(page.locator(".review-topbar .status")).toHaveText("Approved");
   await expect(
@@ -303,7 +303,7 @@ test("a failed decision save stays pending and can be retried", async ({
   ).toBe("pending");
   await page.getByRole("button", { name: "Confirm approval" }).click();
   await expect(
-    page.getByRole("heading", { name: "Review complete" }),
+    page.getByRole("region", { name: "Review complete" }),
   ).toBeVisible();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
@@ -349,7 +349,7 @@ test("a conflict with a failed refresh blocks decisions until the list is reopen
   await page.getByRole("searchbox", { name: "Search documents" }).fill(title);
   await page.locator(".document-link").filter({ hasText: title }).click();
   await expect(
-    page.getByRole("heading", { name: "Review complete" }),
+    page.getByRole("region", { name: "Review complete" }),
   ).toBeVisible();
   await expect(page.locator(".review-topbar .status")).toHaveText("Rejected");
 });

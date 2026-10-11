@@ -109,7 +109,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "EXCEPTION_HANDLER": "workflow.errors.exception_handler",
-    "DEFAULT_THROTTLE_RATES": {"login": "20/minute"},
+    "DEFAULT_THROTTLE_RATES": {"login": "20/minute", "demo_sample": "10/minute"},
 }
 MAX_DOCUMENT_BYTES = 4_000_000
 DEMO_ENABLED = os.getenv("DEMO_ENABLED", "0") == "1"

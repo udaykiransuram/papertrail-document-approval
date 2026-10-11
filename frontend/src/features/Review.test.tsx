@@ -23,7 +23,7 @@ it("prevents decisions when the document has not rendered", async () => {
     created_at: "2026-10-09T10:00:00Z",
     reviewed_at: null,
   } as Submission);
-  render(<Review id="1" user={user} onBack={vi.fn()} />);
+  render(<Review id="1" user={user} onBack={vi.fn()} onOpen={vi.fn()} />);
   expect(
     await screen.findByRole("button", { name: "Approve document" }),
   ).toBeDisabled();

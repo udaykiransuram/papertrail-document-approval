@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { SubmitterFilter } from "../components/SubmitterFilter";
 import { Pagination } from "../components/Pagination";
+import { StartSampleReview } from "../components/StartSampleReview";
 import { api, messageOf } from "../api";
 import {
   ErrorNotice,
@@ -109,6 +110,8 @@ export function Dashboard({
   const hasFilters = Boolean(
     query.search || query.owner || query.status !== "all",
   );
+  const hasNarrowingFilters = Boolean(query.search || query.owner);
+  const emptyPending = query.status === "pending" && !hasNarrowingFilters;
   function clearFilters() {
     setSearchInput("");
     setQuery((current) => ({
@@ -129,12 +132,18 @@ export function Dashboard({
             {user.role === "reviewer" ? "Review queue" : "My submissions"}
           </h1>
         </div>
-        {user.role === "submitter" && (
-          <button className="button primary" onClick={() => setUploading(true)}>
-            <Plus size={18} />
-            Submit document
-          </button>
-        )}
+        <div className="queue-actions">
+          {user.is_demo && <StartSampleReview onOpen={onOpen} />}
+          {user.role === "submitter" && (
+            <button
+              className="button primary"
+              onClick={() => setUploading(true)}
+            >
+              <Plus size={18} />
+              Submit document
+            </button>
+          )}
+        </div>
       </div>
       <section
         className="submissions-panel"
@@ -236,7 +245,7 @@ export function Dashboard({
               <ChevronDown size={15} aria-hidden="true" />
             </span>
           </label>
-          {data && !error && (
+          {data && data.count > 0 && !error && (
             <Pagination
               data={data}
               loading={loading}
@@ -264,7 +273,7 @@ export function Dashboard({
             <ErrorNotice message={error} />
           </div>
         )}
-        {loading && !data ? (
+        {loading && !visible.length ? (
           <Loading label="Loading submissions…" />
         ) : visible.length ? (
           <div className={`table-scroll${loading ? " updating" : ""}`}>
@@ -330,18 +339,33 @@ export function Dashboard({
                 <FileCheck2 size={30} />
               </span>
               <h2>
-                {hasFilters
-                  ? "No matching documents."
-                  : "A clear space for your documents."}
+                {emptyPending
+                  ? user.role === "reviewer"
+                    ? "You’re all caught up."
+                    : "No documents awaiting review."
+                  : hasFilters
+                    ? "No matching documents."
+                    : "A clear space for your documents."}
               </h2>
               <p>
-                {hasFilters
-                  ? "Try another search or clear your filters to see more documents."
-                  : user.role === "submitter"
-                    ? "Submit a document and follow its progress here."
-                    : "Documents awaiting your review will appear here."}
+                {emptyPending
+                  ? counts.all > 0
+                    ? "Every submitted document has a saved decision. You can view them below."
+                    : user.is_demo
+                      ? "Start a sample review to try the approval workflow."
+                      : "New submissions will appear here when they’re ready for review."
+                  : hasFilters
+                    ? "Try another search or clear your filters to see more documents."
+                    : user.role === "submitter"
+                      ? "Submit a document and follow its progress here."
+                      : "Documents awaiting your review will appear here."}
               </p>
-              {hasFilters && (
+              {emptyPending && counts.all > 0 && (
+                <button className="button secondary" onClick={clearFilters}>
+                  View reviewed documents
+                </button>
+              )}
+              {!emptyPending && hasFilters && (
                 <button className="button secondary" onClick={clearFilters}>
                   Clear filters
                 </button>
@@ -361,7 +385,7 @@ export function Dashboard({
             </div>
           )
         )}
-        {data && !error && (
+        {data && data.count > 0 && !error && (
           <Pagination
             data={data}
             loading={loading}

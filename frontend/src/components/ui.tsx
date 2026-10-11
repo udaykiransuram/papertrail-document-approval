@@ -71,3 +71,13 @@ export const formatDate = (date: string) =>
     day: "numeric",
     year: "numeric",
   }).format(new Date(date));
+
+export const formatDateTime = (date: string) =>
+  new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(new Date(date));

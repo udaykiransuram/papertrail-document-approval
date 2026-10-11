@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from rest_framework.exceptions import NotFound
@@ -15,6 +16,7 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def demo(settings, storage):
+    cache.clear()
     settings.DEMO_ENABLED = True
     call_command("seed_demo")
     users = get_user_model().objects
@@ -45,6 +47,123 @@ def test_seed_refuses_existing_account_collision(settings, users, storage):
         get_user_model().objects.get(username="demo_reviewer").check_password("keep-me")
     )
     storage[0].assert_not_called()
+
+
+@pytest.mark.parametrize("role", [0, 1])
+def test_fresh_sample_uses_demo_owner_and_preserves_old_decisions(
+    demo, users, client, role
+):
+    submitter, reviewer = demo
+    original = Submission.objects.filter(owner=submitter).first()
+    decide_submission(reviewer, original, "approved")
+    client.force_authenticate(demo[role])
+    first = client.post(
+        "/api/demo/sample/", {"owner": users[0].id, "status": "approved"}
+    )
+    second = client.post("/api/demo/sample/", {})
+    assert first.status_code == second.status_code == 201
+    assert first.data["id"] != second.data["id"]
+    assert first.data["owner"]["id"] == submitter.id
+    assert first.data["status"] == "pending"
+    assert first.data["content_type"] == "application/pdf"
+    assert first.data["reviewed_at"] is None
+    assert not visible_submissions(users[2]).filter(pk=first.data["id"]).exists()
+    original.refresh_from_db()
+    assert original.status == "approved"
+
+
+@pytest.mark.parametrize("account", [None, 0, 2])
+def test_sample_endpoint_rejects_anonymous_and_ordinary_accounts(
+    demo, users, client, account, storage
+):
+    if account is not None:
+        client.force_authenticate(users[account])
+    before = storage[0].call_count
+    assert client.post("/api/demo/sample/", {}).status_code == 403
+    assert storage[0].call_count == before
+
+
+def test_sample_endpoint_honors_disabled_demo(demo, settings, client, storage):
+    settings.DEMO_ENABLED = False
+    client.force_authenticate(demo[1])
+    before = storage[0].call_count
+    assert client.post("/api/demo/sample/", {}).status_code == 404
+    assert storage[0].call_count == before
+
+
+@pytest.mark.parametrize(
+    "mutation", ["unmarked", "inactive", "staff", "superuser", "wrong_role"]
+)
+def test_sample_refuses_misconfigured_owner(demo, client, mutation, storage):
+    owner = demo[0]
+    if mutation == "unmarked":
+        owner.groups.remove(Group.objects.get(name="demo"))
+    elif mutation == "wrong_role":
+        owner.groups.add(Group.objects.get(name="reviewer"))
+    else:
+        setattr(
+            owner,
+            {"inactive": "is_active", "staff": "is_staff", "superuser": "is_superuser"}[
+                mutation
+            ],
+            mutation != "inactive",
+        )
+        owner.save()
+    client.force_authenticate(demo[1])
+    before = storage[0].call_count
+    assert client.post("/api/demo/sample/", {}).status_code == 503
+    assert storage[0].call_count == before
+
+
+def test_sample_creation_requires_csrf(demo):
+    client = APIClient(enforce_csrf_checks=True)
+    csrf = client.get("/api/session/").data["csrfToken"]
+    signed_in = client.post(
+        "/api/demo/login/", {"role": "reviewer"}, HTTP_X_CSRFTOKEN=csrf
+    )
+    assert client.post("/api/demo/sample/", {}).status_code == 403
+    assert (
+        client.post(
+            "/api/demo/sample/", {}, HTTP_X_CSRFTOKEN=signed_in.data["csrfToken"]
+        ).status_code
+        == 201
+    )
+
+
+def test_sample_storage_failure_does_not_create_submission(demo, client, storage):
+    from workflow.errors import StorageUnavailable
+
+    client.force_authenticate(demo[1])
+    before = Submission.objects.count()
+    storage[0].side_effect = StorageUnavailable()
+    assert client.post("/api/demo/sample/", {}).status_code == 503
+    assert Submission.objects.count() == before
+
+
+def test_sample_creation_is_throttled_without_extra_uploads(demo, client, storage):
+    client.force_authenticate(demo[1])
+    for _ in range(10):
+        assert client.post("/api/demo/sample/", {}).status_code == 201
+    before = storage[0].call_count
+    response = client.post("/api/demo/sample/", {})
+    assert response.status_code == 429
+    assert "Retry-After" in response
+    assert storage[0].call_count == before
+
+
+def test_sample_database_failure_cleans_up_upload(demo, client, storage, monkeypatch):
+    from unittest.mock import Mock
+
+    from django.db import DatabaseError
+
+    client.force_authenticate(demo[1])
+    before = Submission.objects.count()
+    monkeypatch.setattr(
+        "workflow.services.Submission.objects.create", Mock(side_effect=DatabaseError())
+    )
+    assert client.post("/api/demo/sample/", {}).status_code == 503
+    assert Submission.objects.count() == before
+    storage[2].assert_called_once()
 
 
 def test_demo_disabled_and_missing_accounts(settings, client):

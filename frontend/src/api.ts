@@ -78,6 +78,8 @@ export const api = {
     return data.user!;
   },
   logout: () => request("/api/logout/", { method: "POST" }),
+  startSample: () =>
+    request<Submission>("/api/demo/sample/", { method: "POST" }),
   async demoLogin(role: User["role"]) {
     const data = await request<Session>("/api/demo/login/", {
       method: "POST",

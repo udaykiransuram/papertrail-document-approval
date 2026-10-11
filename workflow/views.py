@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.db.models import Case, Count, IntegerField, Q, Value, When
@@ -126,6 +127,54 @@ class LogoutView(APIView):
     def post(self, request):
         logout(request)
         return Response({"message": "Signed out."})
+
+
+class DemoSampleView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "demo_sample"
+
+    def post(self, request):
+        if not settings.DEMO_ENABLED:
+            return Response({"message": "Demo access is not enabled."}, status=404)
+        if (
+            not is_demo(request.user)
+            or request.user.username not in DEMO_ACCOUNTS.values()
+            or request.user.is_staff
+            or request.user.is_superuser
+        ):
+            raise PermissionDenied("Sample reviews are available only in the demo.")
+        owner = (
+            get_user_model()
+            .objects.filter(
+                username=DEMO_ACCOUNTS["submitter"],
+                groups__name="demo",
+                is_active=True,
+                is_staff=False,
+                is_superuser=False,
+            )
+            .first()
+        )
+        if owner is None or is_reviewer(owner):
+            raise StorageUnavailable(
+                "The demo is not ready yet. Please try again shortly."
+            )
+        sample = (
+            settings.BASE_DIR
+            / "frontend"
+            / "public"
+            / "samples"
+            / "project-proposal.pdf"
+        )
+        try:
+            upload = SimpleUploadedFile("project-proposal.pdf", sample.read_bytes())
+            submission = services.create_submission(
+                owner, "Practice review — project proposal", upload
+            )
+        except (OSError, DatabaseError) as exc:
+            raise StorageUnavailable(
+                "The sample review could not be created. Please try again."
+            ) from exc
+        return Response(SubmissionSerializer(submission).data, status=201)
 
 
 @method_decorator(never_cache, name="dispatch")

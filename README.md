@@ -12,7 +12,9 @@ Open [Papertrail](https://papertrail-document-approval.vercel.app/) and choose *
 2. Select **Switch to Reviewer**, open the document, and approve or reject it.
 3. Select **Switch to Submitter** to see the saved decision.
 
-The reviewer queue also starts with a sample PDF and Word document. Decisions are final; to try again, submit another sample. This is a shared workspace: use synthetic content only. Normal account sign-in remains available and its documents are isolated from the demo.
+For a quicker review, choose **Try as Reviewer**, then **Start a sample review**. It creates a fresh pending PDF and opens it immediately, even when the queue has no pending documents. The saved result shows the reviewer and time, with **Review next pending document** and **Back to queue**. Starting another sample preserves earlier decisions. The submitter demo also has this shortcut; switch to Reviewer to decide.
+
+The reviewer queue initially includes a sample PDF and Word document. This is a shared workspace: use synthetic content only. Normal account sign-in remains available and its documents are isolated from the demo.
 
 ## Run locally
 
@@ -57,13 +59,14 @@ pnpm test
 
 `pnpm test` runs pytest, Vitest, TypeScript compilation, the production Vite build, and Playwright. On Linux CI, use `pnpm exec playwright install --with-deps chromium` for browser system dependencies. Individual commands are `.venv/bin/python -m pytest`, `pnpm test:unit`, `pnpm build`, and `pnpm test:e2e` (requires a current build).
 
-Latest verification: **68 backend tests, 15 frontend tests, and 18 browser tests passed**. Coverage includes:
+Latest verification: **83 backend tests, 17 frontend tests, and 22 browser tests passed**. Coverage includes:
 
 - One-click demo entry, session rotation on role switch, sample PDF/Word journeys, idempotent demo setup, account-collision protection, and isolation of lists, counts, submitter choices, details, file bytes, and decisions between ordinary and demo accounts.
 - Real login/logout and CSRF, server-derived ownership, private file access, reviewer-only decisions, status filters, and idempotent seeding.
 - Valid and invalid file content, type and size limits, multiple files, missing title, DOCX external resources and embedded files.
 - Upload failure creates no submission; database failure triggers Blob cleanup; cleanup failure is logged; file-fetch failure is surfaced.
 - Approval, rejection, repeated decisions, conflicting decisions, and stale model instances cannot overwrite a saved decision.
+- Saved-decision panels, reviewer/timestamp display, live announcements and keyboard focus, next-review navigation with preserved filters, an empty pending queue, and returning to reviewed documents. Fresh demo samples preserve old decisions, stay isolated from ordinary accounts, require CSRF, respect throttling, and recover from failed creation without duplicate clicks.
 - Three-page PDF and two-page Word rendering, actual Word zoom, both end-to-end decision journeys, status persistence, isolated submitter access, preview retry, malformed PDF/DOCX errors, login errors, desktop and mobile overflow checks.
 - Twenty-row page boundaries, stable ordering without duplicate records between pages, every status tab, date/status/submitter sorting, combined submitter-and-status filters, permission-scoped counts, invalid query parameters, and clamping a page that disappears after a review.
 - A browser journey with more than sixty submissions checks combined document search, submitter selection, sorting, top/bottom next/previous-page controls, mobile controls, and preserving page/search/filter/sort selections when returning from a document.
@@ -72,7 +75,7 @@ Latest verification: **68 backend tests, 15 frontend tests, and 18 browser tests
 
 Recovery browser tests remove the real session cookie, abort or reject uploads, interrupt demo role switching, and save a decision through a separate request before the stale page acts. They verify reauthentication, retained upload inputs, unchanged roles on failure, saved outcomes, retry controls, and recovery when conflict refresh also fails. Permission errors are distinguished from expired sessions, including private document reads.
 
-Backend tests mock storage. Browser tests use a separate SQLite database at `var/e2e.sqlite3` and private local files at `var/e2e-documents/`; they never contact Neon or Blob and never flush the application database. The fixed password in test sources applies only to this isolated test configuration, which uses a fast test-only password hasher. The browser configuration also raises the login throttle to 1,000/minute because all test sessions use one IP; production remains at 20/minute. Never deploy `config.test_settings` or `config.e2e_settings`.
+Backend tests mock storage. Browser tests use a separate SQLite database at `var/e2e.sqlite3` and private local files at `var/e2e-documents/`; they never contact Neon or Blob and never flush the application database. The fixed password in test sources applies only to this isolated test configuration, which uses a fast test-only password hasher. The browser configuration raises login and sample-creation throttles to 1,000/minute for isolated test sessions; production keeps login at 20/minute and sample creation at 10/minute. Never deploy `config.test_settings` or `config.e2e_settings`.
 
 Browser artifacts are written under the operating system's temporary directory in `papertrail-qa/` and `papertrail-playwright/`. The tested viewports are 1440×1000, 1920×1080, and 390×844 in Chromium. Production verification additionally covered real Neon/Blob uploads and byte-for-byte authorized downloads, CSRF, ownership isolation, reviewer permissions, oversized uploads, PDF/Word previews, saved decisions, conflicting/repeated decisions, combined search/filters, and logout. Neon-specific simultaneous-request concurrency, other browser engines, and arbitrary complex Word layouts remain unverified.
 
@@ -167,11 +170,14 @@ Run `manage.py seed_demo` explicitly against the intended database and storage. 
 
 Both demo identities intentionally share one public evaluation workspace. Existing ordinary accounts remain separate. Setting `DEMO_ENABLED=0` disables new demo logins and role switches; it does not revoke existing sessions. For permanent shutdown, deactivate both demo accounts as well. Production use should disable demo entry; a longer-lived public demo should add storage quotas, distributed throttling, and expiry/reset of synthetic data.
 
+`POST /api/demo/sample/` creates a fresh pending copy of the bundled PDF, owned by the fixed demo submitter. Only the two active, non-privileged demo identities can call it, with session authentication and CSRF; disabling the demo disables this action too. It uses the normal private storage service and database-failure cleanup. The sample action is throttled to ten requests per minute per demo identity using the in-process cache; this is a lightweight guard, not a distributed quota. Repeated intentional requests create separate reviews. The UI disables the button during creation and exposes retry on failure. No existing submission or decision is reset.
+
 ### Frontend behavior
 
 - Submitters see their own documents and upload a title plus one file. Reviewers initially see pending submissions. All documents, Pending, Approved, and Rejected tabs use server-side filtering and twenty records per page.
 - Both roles can sort by submitted date (newest/oldest) or status (pending/approved/rejected, or the reverse). Reviewers also have a searchable Submitted by picker (name or username) and alphabetical submitter sorting. A document search matches title or original filename for either role, case-insensitively, across all pages. Counts reflect the document search and selected submitter. Changing a search, filter, or sort starts at page one. Previous/next controls appear above and below the table. Search requests are debounced by 250 ms and stale requests are cancelled; clear-filter and no-results states help recover from an over-specific search.
 - Lists refresh on navigation back, window focus, and the refresh button. Page, search, filter, submitter, and sort selections survive opening a document and returning to the list, and reset at sign-out. If reviewing the final item empties the last page, the API clamps to the nearest remaining page. Decision responses update the review screen immediately; conflicts fetch the saved decision.
+- Saved decisions appear prominently with the reviewer and local date/time. A live region announces the result and keyboard focus moves to its heading. Reviewers can return to the queue or open the next pending document matching their search, submitter and sort; pending results are rechecked before navigation. When none remain, the result explains whether the queue is clear or only the active filters have no pending matches. The empty Pending tab links to reviewed documents and hides redundant pagination.
 - PDF rendering uses React-PDF and a locally bundled PDF.js worker; Word uses docx-preview. The heavy viewers load only when a document is opened.
 - Word output is placed in a sandboxed iframe with scripts disabled and a restrictive content policy. External resources and HTML alternate chunks are not rendered. Word pagination, fonts, and layout may differ from Microsoft Word.
 - The review screen uses a compact back/title/status row. The document fills the remaining window height, with a narrow details sidebar that fits its content. Automatic sizing keeps the page at its natural CSS size on larger screens and shrinks to fit narrow screens. Named controls offer Fit page, Fit width, and Actual size; manual zoom is 10–300% of natural size. PDF points are converted at 96 CSS pixels per inch, matching Word preview sizing. Fit page uses the first page dimensions and keeps it within the viewer height, with space for the page caption; mixed page sizes and complex Word layouts may vary. The viewer supports scrolling independently of the surrounding page. Desktop decision controls remain visible while the document scrolls; panels stack on mobile. Decisions require a loaded preview and an explicit confirmation.
@@ -188,6 +194,8 @@ All paths end with `/`. Session/login are public; every other endpoint requires 
 | `GET /api/session/` | — | `{user: null or user, csrfToken}` |
 | `POST /api/login/` | JSON `{username, password}` | `{user, csrfToken}` |
 | `POST /api/logout/` | — | `{message}` |
+| `POST /api/demo/login/` | JSON `{role: "submitter"}` or `"reviewer"` | Demo session, when enabled |
+| `POST /api/demo/sample/` | — | 201 with a fresh pending sample; demo accounts only |
 | `GET /api/submissions/` | Optional `q`, `status`, `owner`, `page`, `sort` | Paginated results and scoped counts (below) |
 | `POST /api/submissions/` | Multipart `title`, `file` | 201 with the pending submission |
 | `GET /api/submissions/{uuid}/` | — | Submission metadata |
