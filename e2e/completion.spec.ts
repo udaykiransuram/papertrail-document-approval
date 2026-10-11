@@ -32,6 +32,32 @@ async function enterDemo(page: Page, role = "Reviewer") {
 async function csrf(page: Page) {
   return (await (await page.request.get("/api/session/")).json()).csrfToken;
 }
+async function openSampleFixture(page: Page) {
+  const response = await page.request.post("/api/demo/sample/", {
+    headers: { "X-CSRFToken": await csrf(page) },
+  });
+  expect(response.status()).toBe(201);
+  await page.goto(`/submissions/${(await response.json()).id}`);
+}
+async function finishPendingFixtures(page: Page) {
+  // Only the isolated test database's synthetic fixtures are changed.
+  const token = await csrf(page);
+  const pending = await (
+    await page.request.get("/api/submissions/?status=pending")
+  ).json();
+  expect(pending.total_pages).toBeLessThanOrEqual(1);
+  for (const item of pending.results) {
+    const response = await page.request.post(
+      `/api/submissions/${item.id}/decision/`,
+      { headers: { "X-CSRFToken": token }, data: { status: "approved" } },
+    );
+    expect(response.status()).toBe(200);
+  }
+  await page.getByRole("button", { name: "Refresh submissions" }).click();
+  await expect(
+    page.getByRole("heading", { name: "You’re all caught up." }),
+  ).toBeVisible();
+}
 async function decide(page: Page, status: "approved" | "rejected") {
   await page
     .getByRole("button", {
@@ -53,6 +79,12 @@ async function decide(page: Page, status: "approved" | "rejected") {
   await expect(result).toContainText("Reviewed by Demo Reviewer");
   await expect(result.locator("time")).toHaveAttribute("datetime", /T/);
   await expect(
+    result.getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
+  ).toHaveCount(0);
+  await expect(result).not.toContainText("Try a fresh sample");
+  await expect(
     page.getByRole("status").filter({
       hasText: `Document ${status}. Your decision has been saved.`,
     }),
@@ -64,7 +96,15 @@ test("fresh samples keep saved decisions, with accessible desktop and mobile out
   page,
 }) => {
   await enterDemo(page);
-  await page.getByRole("button", { name: "Start a sample review" }).click();
+  await expect(
+    page.getByRole("region", { name: "Submissions", exact: true }),
+  ).toHaveAttribute("aria-busy", "false");
+  await expect(
+    page.getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
+  ).toHaveCount(0);
+  await openSampleFixture(page);
   await expect(page.locator(".react-pdf__Page canvas")).toHaveCount(3);
   const firstUrl = page.url();
   const firstId = new URL(firstUrl).pathname.split("/").pop();
@@ -76,7 +116,7 @@ test("fresh samples keep saved decisions, with accessible desktop and mobile out
     path: path.join(evidence, "completion-approved-desktop.png"),
     fullPage: true,
   });
-  await approved.getByRole("button", { name: "Start a sample review" }).click();
+  await openSampleFixture(page);
   await expect(page).not.toHaveURL(firstUrl);
   await expect(page.locator(".react-pdf__Page canvas")).toHaveCount(3);
   expect(
@@ -107,6 +147,11 @@ test("fresh samples keep saved decisions, with accessible desktop and mobile out
   await page.goto(rejectedUrl);
   const saved = page.getByRole("region", { name: "Review complete" });
   await expect(saved.getByRole("heading", { name: "Rejected" })).toBeVisible();
+  await expect(
+    saved.getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
+  ).toHaveCount(0);
   await expect(
     saved.getByRole("button", { name: "Review next pending document" }),
   ).toHaveCount(0);
@@ -201,7 +246,8 @@ test("sample creation retries failures and disables duplicate submission", async
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await enterDemo(page, "Submitter");
+  await enterDemo(page);
+  await finishPendingFixtures(page);
   await page.route(
     "**/api/demo/sample/",
     (route) =>
@@ -214,7 +260,7 @@ test("sample creation retries failures and disables duplicate submission", async
       }),
     { times: 1 },
   );
-  await page.getByRole("button", { name: "Start a sample review" }).click();
+  await page.getByRole("button", { name: "Try a sample document" }).click();
   await expect(page.getByRole("alert")).toContainText("could not be created");
   await page.screenshot({
     path: path.join(evidence, "completion-sample-retry-mobile.png"),
@@ -230,7 +276,7 @@ test("sample creation retries failures and disables duplicate submission", async
     await gate;
     await route.continue();
   });
-  await page.getByRole("button", { name: "Start a sample review" }).click();
+  await page.getByRole("button", { name: "Try a sample document" }).click();
   await expect(
     page.getByRole("button", { name: "Preparing sample…" }),
   ).toBeDisabled();
@@ -239,7 +285,7 @@ test("sample creation retries failures and disables duplicate submission", async
     page.getByRole("heading", { name: "Practice review — project proposal" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Awaiting review" }),
+    page.getByRole("heading", { name: "Your decision" }),
   ).toBeVisible();
   expect(requests).toBe(1);
   await expect(page.getByRole("alert")).toHaveCount(0);
@@ -249,35 +295,51 @@ test("empty pending queue offers reviewed documents and fresh samples, but ordin
   page,
 }) => {
   await enterDemo(page);
-  // This test server has an isolated database containing only synthetic fixtures.
-  const token = await csrf(page);
-  const pending = await (
-    await page.request.get("/api/submissions/?status=pending")
-  ).json();
-  expect(pending.total_pages).toBeLessThanOrEqual(1);
-  for (const item of pending.results) {
-    const response = await page.request.post(
-      `/api/submissions/${item.id}/decision/`,
-      {
-        headers: { "X-CSRFToken": token },
-        data: { status: "approved" },
-      },
-    );
-    expect(response.status()).toBe(200);
-  }
-  await page.getByRole("button", { name: "Refresh submissions" }).click();
+  await finishPendingFixtures(page);
   await expect(
     page.getByRole("heading", { name: "You’re all caught up." }),
   ).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: /Submission pages/ }),
   ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".empty-state")
+      .getByRole("button", { name: "Try a sample document" }),
+  ).toBeVisible();
+  await expect(
+    page
+      .locator(".queue-heading")
+      .getByRole("button", {
+        name: /^(Start a sample review|Try a sample document)$/,
+      }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("searchbox", { name: "Search documents" })
+    .fill("no-such-document");
+  await expect(
+    page.getByRole("heading", { name: "No matching documents." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Clear document search" }).click();
+  await expect(
+    page.getByRole("heading", { name: "You’re all caught up." }),
+  ).toBeVisible();
   await page.screenshot({
     path: path.join(evidence, "completion-caught-up-desktop.png"),
     fullPage: true,
   });
   await page.getByRole("button", { name: "View reviewed documents" }).click();
   await expect(page.locator("tbody tr").first()).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
+  ).toHaveCount(0);
   await page.locator(".document-link").first().click();
   await expect(
     page.getByRole("region", { name: "Review complete" }),
@@ -292,6 +354,8 @@ test("empty pending queue offers reviewed documents and fresh samples, but ordin
     page.getByRole("heading", { name: "Review queue" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Start a sample review" }),
+    page.getByRole("button", {
+      name: /^(Start a sample review|Try a sample document)$/,
+    }),
   ).toHaveCount(0);
 });

@@ -1,7 +1,6 @@
 import type { Ref } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { formatDateTime } from "../components/ui";
-import { StartSampleReview } from "../components/StartSampleReview";
 import { ReviewNext } from "./ReviewNext";
 import type { ListPreferences, Submission, User } from "../types";
 
@@ -50,14 +49,6 @@ export function DecisionResult({
       <button className="button secondary full" onClick={onBack}>
         {user.role === "reviewer" ? "Back to queue" : "Back to submissions"}
       </button>
-      {user.is_demo && (
-        <div className="outcome-demo">
-          <StartSampleReview onOpen={onOpen} />
-          <small>
-            Try a fresh sample. Your saved decisions stay unchanged.
-          </small>
-        </div>
-      )}
     </section>
   );
 }

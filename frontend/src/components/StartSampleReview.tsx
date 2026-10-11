@@ -34,7 +34,7 @@ export function StartSampleReview({
         onClick={() => void start()}
       >
         <FilePlus2 size={17} aria-hidden="true" />
-        {busy ? "Preparing sample…" : "Start a sample review"}
+        {busy ? "Preparing sample…" : "Try a sample document"}
       </button>
       <span className="sr-only" role="status">
         {busy ? "Creating a new sample PDF for review." : ""}

@@ -392,8 +392,7 @@ dd {
 .review-next {
   margin: 18px 0 12px;
 }
-.review-next p,
-.outcome-demo small {
+.review-next p {
   font-size: 12px;
   line-height: 1.6;
   color: #52616d;
@@ -426,15 +425,15 @@ dd {
   margin-top: 10px;
   max-width: 320px;
 }
-.outcome-demo {
-  margin-top: 18px;
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: start;
+  gap: 12px;
 }
-.outcome-demo .button {
-  width: 100%;
-}
-.outcome-demo small {
-  display: block;
-  margin-top: 8px;
+.empty-state-actions .button {
+  min-height: 44px;
 }
 @media (max-width: 720px) {
   .queue-actions {
@@ -443,9 +442,6 @@ dd {
   .queue-actions > * {
     flex: 1;
     min-width: 140px;
-  }
-  .queue-actions .start-sample .button {
-    width: 100%;
   }
 }
 .confirm-decision p {

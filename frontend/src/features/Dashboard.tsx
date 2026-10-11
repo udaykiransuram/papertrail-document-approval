@@ -132,9 +132,8 @@ export function Dashboard({
             {user.role === "reviewer" ? "Review queue" : "My submissions"}
           </h1>
         </div>
-        <div className="queue-actions">
-          {user.is_demo && <StartSampleReview onOpen={onOpen} />}
-          {user.role === "submitter" && (
+        {user.role === "submitter" && (
+          <div className="queue-actions">
             <button
               className="button primary"
               onClick={() => setUploading(true)}
@@ -142,8 +141,8 @@ export function Dashboard({
               <Plus size={18} />
               Submit document
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       <section
         className="submissions-panel"
@@ -352,7 +351,7 @@ export function Dashboard({
                   ? counts.all > 0
                     ? "Every submitted document has a saved decision. You can view them below."
                     : user.is_demo
-                      ? "Start a sample review to try the approval workflow."
+                      ? "Try a sample document to explore the approval workflow."
                       : "New submissions will appear here when they’re ready for review."
                   : hasFilters
                     ? "Try another search or clear your filters to see more documents."
@@ -360,10 +359,15 @@ export function Dashboard({
                       ? "Submit a document and follow its progress here."
                       : "Documents awaiting your review will appear here."}
               </p>
-              {emptyPending && counts.all > 0 && (
-                <button className="button secondary" onClick={clearFilters}>
-                  View reviewed documents
-                </button>
+              {emptyPending && (
+                <div className="empty-state-actions">
+                  {counts.all > 0 && (
+                    <button className="button secondary" onClick={clearFilters}>
+                      View reviewed documents
+                    </button>
+                  )}
+                  {user.is_demo && <StartSampleReview onOpen={onOpen} />}
+                </div>
               )}
               {!emptyPending && hasFilters && (
                 <button className="button secondary" onClick={clearFilters}>

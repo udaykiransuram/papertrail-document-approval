@@ -12,7 +12,7 @@ Open [Papertrail](https://papertrail-document-approval.vercel.app/) and choose *
 2. Select **Switch to Reviewer**, open the document, and approve or reject it.
 3. Select **Switch to Submitter** to see the saved decision.
 
-For a quicker review, choose **Try as Reviewer**, then **Start a sample review**. It creates a fresh pending PDF and opens it immediately, even when the queue has no pending documents. The saved result shows the reviewer and time, with **Review next pending document** and **Back to queue**. Starting another sample preserves earlier decisions. The submitter demo also has this shortcut; switch to Reviewer to decide.
+When the demo's Pending tab is empty, **Try a sample document** creates a fresh pending PDF and opens it. This optional shortcut appears only in the empty state, without a search or submitter filter. The saved result shows the reviewer and time, with **Review next pending document** and **Back to queue**; it has no sample-creation control. Starting a sample preserves earlier decisions. Demo submitters can also use the empty Pending tab's shortcut, then switch to Reviewer to decide.
 
 The reviewer queue initially includes a sample PDF and Word document. This is a shared workspace: use synthetic content only. Normal account sign-in remains available and its documents are isolated from the demo.
 
