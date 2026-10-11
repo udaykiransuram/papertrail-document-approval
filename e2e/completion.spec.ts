@@ -179,7 +179,7 @@ test("review next follows search, submitter and sort, then returns to the filter
           name: "proposal.pdf",
           mimeType: "application/pdf",
           buffer: fs.readFileSync(
-            "workflow/tests/fixtures/project-proposal.pdf",
+            "workflow/samples/project-proposal.pdf",
           ),
         },
       },

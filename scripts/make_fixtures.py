@@ -1,3 +1,6 @@
+"""Regenerate the synthetic backend samples and their matching public copies."""
+
+import shutil
 from pathlib import Path
 
 from docx import Document
@@ -96,6 +99,10 @@ def make_fixtures(destination):
 
 
 if __name__ == "__main__":
-    make_fixtures(
-        Path(__file__).resolve().parent.parent / "workflow" / "tests" / "fixtures"
-    )
+    root = Path(__file__).resolve().parent.parent
+    samples = root / "workflow" / "samples"
+    make_fixtures(samples)
+    public = root / "frontend" / "public" / "samples"
+    public.mkdir(parents=True, exist_ok=True)
+    for filename in ("project-proposal.pdf", "project-brief.docx"):
+        shutil.copyfile(samples / filename, public / filename)

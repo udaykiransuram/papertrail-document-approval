@@ -4,7 +4,7 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 const evidence = path.join(tmpdir(), "papertrail-qa");
 fs.mkdirSync(evidence, { recursive: true });
-const fixture = (name: string) => path.resolve("workflow/tests/fixtures", name);
+const fixture = (name: string) => path.resolve("workflow/samples", name);
 
 async function submitter(page: Page) {
   await page.goto("/");

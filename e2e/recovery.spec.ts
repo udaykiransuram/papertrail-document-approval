@@ -38,7 +38,7 @@ async function prepareReview(page: Page, title: string) {
       file: {
         name: "proposal.pdf",
         mimeType: "application/pdf",
-        buffer: fs.readFileSync("workflow/tests/fixtures/project-proposal.pdf"),
+        buffer: fs.readFileSync("workflow/samples/project-proposal.pdf"),
       },
     },
   });

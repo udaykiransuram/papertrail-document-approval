@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 const evidenceDirectory = path.join(tmpdir(), "papertrail-qa");
 fs.mkdirSync(evidenceDirectory, { recursive: true });
 const password = "E2e-only-password-924!";
-const fixture = (name: string) => path.resolve("workflow/tests/fixtures", name);
+const fixture = (name: string) => path.resolve("workflow/samples", name);
 async function login(page: Page, username: string) {
   await page.goto("/");
   await page.getByLabel("Username").fill(username);

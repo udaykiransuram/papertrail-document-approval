@@ -31,7 +31,7 @@ async function fixtures(page: Page, prefix: string, count = 1) {
           name: "proposal.pdf",
           mimeType: "application/pdf",
           buffer: fs.readFileSync(
-            "workflow/tests/fixtures/project-proposal.pdf",
+            "workflow/samples/project-proposal.pdf",
           ),
         },
       },
