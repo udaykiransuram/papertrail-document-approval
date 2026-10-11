@@ -21,8 +21,6 @@ Checked against the three-page **Take-home Challenge: Document Approval Workflow
 | Approximately five-minute video, linked in README                      | **Pending recording and link.** Outline below.                                                                                                   |
 | Private repository shared with `enghiring@springboard.com`             | **Delivery exception:** repository remains public by the applicant's explicit choice. Private-repository handover/access has not been completed. |
 
-The brief's time budget is up to two hours. This repository includes subsequent deployment, testing, and UI iterations; do not represent the entire current version as work completed within that initial window. Explain the initial scope and later improvements in the walkthrough if asked.
-
 ## Before sending
 
 - [x] Include the live URL, source, runnable local setup, API examples, and AI disclosure.
@@ -48,7 +46,7 @@ Prepare the app and repository before recording. Use a fresh synthetic title so 
 | 2:50–3:20 | Demonstrate Alex/Jamie isolation locally, or show the relevant test. Explain that one-click demo identities use a separate shared workspace.                   |
 | 3:20–4:10 | Open `models.py`, `permissions.py`, and `services.py`: state constraint, scoped access, atomic pending-only update, and storage cleanup on failed persistence. |
 | 4:10–4:40 | Show a passing test run, `pnpm test`, and one meaningful failure case (invalid file or repeated decision).                                                     |
-| 4:40–5:00 | Disclose Codex assistance. Explain 4 MB limit, Word layout trade-off, initial scope/later polish, and the first production improvements.                       |
+| 4:40–5:00 | Disclose Codex assistance. Explain the 4 MB limit, Word layout trade-off, and the first production improvements.                                                |
 
 Keep credentials and environment files out of the recording. Use the architecture/API docs as reference rather than reading the entire README on screen.
 

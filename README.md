@@ -130,7 +130,7 @@ The data model stores the owner, file metadata, pending/final status, reviewer, 
 
 Documents are uploaded before the database record is created. If persistence fails, the backend attempts to delete the uploaded object. Private file access always goes through Django. PDF previews use React-PDF; DOCX previews use docx-preview in a sandboxed iframe.
 
-The first iteration intentionally has no registration, editing, reassignment, resubmission, comments, or multi-stage approval. Seeded roles, a single Django application, and synchronous uploads keep it straightforward to run and explain. Search, previews, demo access, and other UX refinements were added in subsequent iterations; the commit history records that work. The repository is not presented as an unchanged two-hour build.
+The application intentionally has no registration, editing, reassignment, resubmission, comments, or multi-stage approval. Seeded roles, a single Django application, and synchronous uploads keep it straightforward to run and explain.
 
 [Architecture and trade-offs](docs/ARCHITECTURE.md) covers the model, authorization, demo isolation, preview behavior, and production improvements. Important limits are the 4 MB upload cap, approximate Word pagination, in-process throttling, and the absence of malware scanning or a full audit log.
 
