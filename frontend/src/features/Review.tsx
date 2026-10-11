@@ -10,6 +10,7 @@ import {
 } from "../components/ui";
 import type { ListPreferences, Status, Submission, User } from "../types";
 import { DecisionResult } from "./DecisionResult";
+import { DecisionDialog } from "./DecisionDialog";
 const DocumentViewer = lazy(() => import("./viewer/DocumentViewer"));
 
 export function Review({
@@ -107,7 +108,7 @@ export function Review({
         <h1 title={item?.title}>{item?.title || "Loading document…"}</h1>
         {item && <StatusBadge status={item.status} />}
       </div>
-      {error && <ErrorNotice message={error} />}{" "}
+      {error && !confirmation && <ErrorNotice message={error} />}{" "}
       {!item ? (
         !error && <Loading label="Loading document…" />
       ) : (
@@ -158,54 +159,33 @@ export function Review({
                 {user.role === "reviewer" ? (
                   <>
                     <p>Review the document before making a decision.</p>
-                    {confirmation ? (
-                      <div className="confirm-decision">
-                        <p>
-                          {confirmation === "approved" ? "Approve" : "Reject"}{" "}
-                          this document? This decision is final.
-                        </p>
-                        <button
-                          className={`button full ${confirmation === "approved" ? "primary" : "danger"}`}
-                          disabled={deciding}
-                          onClick={() => void decide(confirmation)}
-                        >
-                          {deciding
-                            ? "Saving decision…"
-                            : `Confirm ${confirmation === "approved" ? "approval" : "rejection"}`}
-                        </button>
-                        <button
-                          className="button secondary full"
-                          disabled={deciding}
-                          onClick={() => setConfirmation(null)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          className="button primary full"
-                          disabled={!previewReady}
-                          onClick={() => setConfirmation("approved")}
-                        >
-                          <Check size={20} />
-                          Approve document
-                        </button>
-                        <button
-                          className="button reject full"
-                          disabled={!previewReady}
-                          onClick={() => setConfirmation("rejected")}
-                        >
-                          <X size={20} />
-                          Reject document
-                        </button>
-                        {!previewReady && (
-                          <small className="form-hint">
-                            Decision controls become available when the preview
-                            loads.
-                          </small>
-                        )}
-                      </>
+                    <button
+                      className="button primary full"
+                      disabled={!previewReady}
+                      onClick={() => {
+                        setError("");
+                        setConfirmation("approved");
+                      }}
+                    >
+                      <Check size={20} />
+                      Approve document
+                    </button>
+                    <button
+                      className="button reject full"
+                      disabled={!previewReady}
+                      onClick={() => {
+                        setError("");
+                        setConfirmation("rejected");
+                      }}
+                    >
+                      <X size={20} />
+                      Reject document
+                    </button>
+                    {!previewReady && (
+                      <small className="form-hint">
+                        Decision controls become available when the preview
+                        loads.
+                      </small>
                     )}
                   </>
                 ) : (
@@ -227,6 +207,19 @@ export function Review({
             </p>
           </aside>
         </div>
+      )}
+      {item && confirmation && (
+        <DecisionDialog
+          item={item}
+          status={confirmation}
+          saving={deciding}
+          error={error}
+          onConfirm={() => void decide(confirmation)}
+          onCancel={() => {
+            setConfirmation(null);
+            setError("");
+          }}
+        />
       )}
     </section>
   );

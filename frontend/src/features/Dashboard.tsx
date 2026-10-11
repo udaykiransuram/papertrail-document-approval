@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
+  Check,
   FileCheck2,
   Plus,
   RefreshCw,
@@ -11,7 +12,7 @@ import {
 import { SubmitterFilter } from "../components/SubmitterFilter";
 import { Pagination } from "../components/Pagination";
 import { StartSampleReview } from "../components/StartSampleReview";
-import { api, messageOf } from "../api";
+import { api, ApiError, messageOf } from "../api";
 import {
   ErrorNotice,
   FileIcon,
@@ -20,8 +21,11 @@ import {
   StatusBadge,
 } from "../components/ui";
 import { UploadDialog } from "./UploadDialog";
+import { DecisionDialog } from "./DecisionDialog";
 import type {
   ListPreferences,
+  Status,
+  Submission,
   SubmissionPage,
   SubmissionSort,
   User,
@@ -54,6 +58,62 @@ export function Dashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    item: Submission;
+    status: Exclude<Status, "pending">;
+  } | null>(null);
+  const [deciding, setDeciding] = useState(false);
+  const [decisionError, setDecisionError] = useState("");
+  const [announcement, setAnnouncement] = useState("");
+  const decisionNotice = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (announcement) decisionNotice.current?.focus();
+  }, [announcement]);
+
+  function confirm(item: Submission, status: Exclude<Status, "pending">) {
+    setAnnouncement("");
+    setDecisionError("");
+    setConfirmation({ item, status });
+  }
+  async function decide() {
+    if (!confirmation || deciding) return;
+    const { item, status } = confirmation;
+    setDeciding(true);
+    setDecisionError("");
+    try {
+      const saved = await api.decide(item.id, status);
+      setData(
+        (current) =>
+          current && {
+            ...current,
+            results: current.results.flatMap((row) =>
+              row.id !== saved.id
+                ? [row]
+                : query.status === "pending"
+                  ? []
+                  : [saved],
+            ),
+          },
+      );
+      setConfirmation(null);
+      setAnnouncement(
+        `“${saved.title}” ${saved.status}. Your decision has been saved.`,
+      );
+      setLoading(true);
+      setRefreshVersion((v) => v + 1);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setConfirmation(null);
+        setAnnouncement(
+          `“${item.title}” was already reviewed. Your decision was not saved. The queue will refresh to show its saved status.`,
+        );
+        setLoading(true);
+        setRefreshVersion((v) => v + 1);
+      } else setDecisionError(messageOf(e));
+    } finally {
+      setDeciding(false);
+    }
+  }
   useEffect(() => {
     if (searchInput.trim() === query.search) return;
     const timeout = window.setTimeout(
@@ -144,6 +204,16 @@ export function Dashboard({
           </div>
         )}
       </div>
+      {announcement && (
+        <div
+          className="queue-decision-notice"
+          role="status"
+          tabIndex={-1}
+          ref={decisionNotice}
+        >
+          {announcement}
+        </div>
+      )}
       <section
         className="submissions-panel"
         aria-label="Submissions"
@@ -281,7 +351,11 @@ export function Dashboard({
                 Updating submissions…
               </span>
             )}
-            <table>
+            <table
+              className={
+                user.role === "reviewer" ? "reviewer-table" : undefined
+              }
+            >
               <thead>
                 <tr>
                   <th>Document</th>
@@ -291,7 +365,7 @@ export function Dashboard({
                   <th className="date-cell">Submitted</th>
                   <th>Status</th>
                   <th>
-                    <span className="sr-only">Open</span>
+                    <span className="sr-only">Actions</span>
                   </th>
                 </tr>
               </thead>
@@ -318,13 +392,36 @@ export function Dashboard({
                       <StatusBadge status={item.status} />
                     </td>
                     <td>
-                      <button
-                        className="icon-button"
-                        aria-label={`Open ${item.title}`}
-                        onClick={() => onOpen(item.id)}
-                      >
-                        <ArrowUpRight size={18} />
-                      </button>
+                      <div className="row-actions">
+                        {user.role === "reviewer" &&
+                          item.status === "pending" && (
+                            <>
+                              <button
+                                className="button secondary row-approve"
+                                aria-label={`Approve ${item.title}`}
+                                disabled={loading}
+                                onClick={() => confirm(item, "approved")}
+                              >
+                                <Check size={15} aria-hidden="true" /> Approve
+                              </button>
+                              <button
+                                className="button reject"
+                                aria-label={`Reject ${item.title}`}
+                                disabled={loading}
+                                onClick={() => confirm(item, "rejected")}
+                              >
+                                <X size={15} aria-hidden="true" /> Reject
+                              </button>
+                            </>
+                          )}
+                        <button
+                          className="icon-button"
+                          aria-label={`Open ${item.title}`}
+                          onClick={() => onOpen(item.id)}
+                        >
+                          <ArrowUpRight size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -398,6 +495,17 @@ export function Dashboard({
           />
         )}
       </section>
+      {confirmation && (
+        <DecisionDialog
+          item={confirmation.item}
+          status={confirmation.status}
+          saving={deciding}
+          error={decisionError}
+          onConfirm={() => void decide()}
+          onCancel={() => setConfirmation(null)}
+          onView={() => onOpen(confirmation.item.id)}
+        />
+      )}
       {uploading && (
         <UploadDialog
           demo={user.is_demo}

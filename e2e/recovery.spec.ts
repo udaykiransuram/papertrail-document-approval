@@ -117,6 +117,9 @@ test("session expiry during private file loading returns to sign-in", async ({
     { times: 1 },
   );
   await page
+    .getByRole("searchbox", { name: "Search documents" })
+    .fill("Sample project proposal");
+  await page
     .locator(".document-link")
     .filter({ hasText: "Sample project proposal" })
     .click();
@@ -195,6 +198,9 @@ test("failed role switch preserves the session and document, then allows retry",
   page,
 }) => {
   await demo(page);
+  await page
+    .getByRole("searchbox", { name: "Search documents" })
+    .fill("Sample project proposal");
   await page
     .locator(".document-link")
     .filter({ hasText: "Sample project proposal" })
