@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from workflow.demo import DEMO_ACCOUNTS, DEMO_SAMPLES
+from workflow.demo import DEMO_ACCOUNTS, DEMO_SAMPLE_DIRECTORY, DEMO_SAMPLES
 from workflow.models import Submission
 from workflow.services import create_submission
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if not settings.DEMO_ENABLED:
             raise CommandError("Set DEMO_ENABLED=1 before seeding the demo.")
-        samples = settings.BASE_DIR / "frontend" / "public" / "samples"
+        samples = DEMO_SAMPLE_DIRECTORY
         if any(not (samples / filename).is_file() for _, filename in DEMO_SAMPLES):
             raise CommandError("Bundled demo sample files are missing.")
         # Refuse collisions before updating either identity. Never turn a normal

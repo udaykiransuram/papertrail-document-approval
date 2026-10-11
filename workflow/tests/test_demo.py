@@ -151,6 +151,26 @@ def test_sample_creation_is_throttled_without_extra_uploads(demo, client, storag
     assert storage[0].call_count == before
 
 
+def test_demo_samples_work_without_frontend_public_files(
+    demo, client, settings, tmp_path, storage
+):
+    from workflow.demo import DEMO_SAMPLE_DIRECTORY, DEMO_SAMPLES
+
+    # Model a function bundle with no frontend/public folder. Both runtime
+    # sample creation and the setup command must use backend package assets.
+    for _, filename in DEMO_SAMPLES:
+        assert (DEMO_SAMPLE_DIRECTORY / filename).read_bytes() == (
+            settings.BASE_DIR / "frontend" / "public" / "samples" / filename
+        ).read_bytes()
+    settings.BASE_DIR = tmp_path
+    client.force_authenticate(demo[1])
+    assert client.post("/api/demo/sample/", {}).status_code == 201
+    Submission.objects.all().delete()
+    storage[0].reset_mock()
+    call_command("seed_demo")
+    assert storage[0].call_count == 2
+
+
 def test_sample_database_failure_cleans_up_upload(demo, client, storage, monkeypatch):
     from unittest.mock import Mock
 

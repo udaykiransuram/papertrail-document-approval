@@ -46,7 +46,7 @@ Local setup deliberately uses SQLite and files in `var/documents/` so the workfl
 
 For frontend hot reload, keep Django running and run `pnpm dev` in a second terminal. Open **http://127.0.0.1:5173**. Vite proxies `/api` to Django, so browser requests remain same-origin. For the built frontend, rerun `pnpm build` and `collectstatic` after changes, then restart Django so its cached HTML shell references the new asset filenames.
 
-Representative documents are included in `workflow/tests/fixtures/` and bundled for the demo in `frontend/public/samples/`: a three-page PDF and two-page DOCX. Both contain synthetic project content, with no user documents or personal data.
+Representative documents are included in `workflow/tests/fixtures/` and bundled for the demo in `frontend/public/samples/`: a three-page PDF and two-page DOCX. Backend sample creation and seeding use matching copies in `workflow/samples/`, because [Vercel's Python builder](https://github.com/vercel/vercel/blob/main/packages/python/src/index.ts) excludes public folders from function bundles. A regression test verifies the backend still works without the frontend folder. Both documents contain synthetic project content, with no user documents or personal data.
 
 ## Test
 
@@ -59,7 +59,7 @@ pnpm test
 
 `pnpm test` runs pytest, Vitest, TypeScript compilation, the production Vite build, and Playwright. On Linux CI, use `pnpm exec playwright install --with-deps chromium` for browser system dependencies. Individual commands are `.venv/bin/python -m pytest`, `pnpm test:unit`, `pnpm build`, and `pnpm test:e2e` (requires a current build).
 
-Latest verification: **83 backend tests, 17 frontend tests, and 22 browser tests passed**. Coverage includes:
+Latest verification: **84 backend tests, 17 frontend tests, and 22 browser tests passed**. Coverage includes:
 
 - One-click demo entry, session rotation on role switch, sample PDF/Word journeys, idempotent demo setup, account-collision protection, and isolation of lists, counts, submitter choices, details, file bytes, and decisions between ordinary and demo accounts.
 - Real login/logout and CSRF, server-derived ownership, private file access, reviewer-only decisions, status filters, and idempotent seeding.

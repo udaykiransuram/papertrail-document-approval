@@ -20,7 +20,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from . import services, storage
-from .demo import DEMO_ACCOUNTS
+from .demo import DEMO_ACCOUNTS, DEMO_SAMPLE_DIRECTORY
 from .errors import StorageUnavailable
 from .models import Submission
 from .permissions import is_demo, is_reviewer, visible_submissions
@@ -158,13 +158,7 @@ class DemoSampleView(APIView):
             raise StorageUnavailable(
                 "The demo is not ready yet. Please try again shortly."
             )
-        sample = (
-            settings.BASE_DIR
-            / "frontend"
-            / "public"
-            / "samples"
-            / "project-proposal.pdf"
-        )
+        sample = DEMO_SAMPLE_DIRECTORY / "project-proposal.pdf"
         try:
             upload = SimpleUploadedFile("project-proposal.pdf", sample.read_bytes())
             submission = services.create_submission(
