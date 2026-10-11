@@ -17,6 +17,29 @@ from workflow.models import Submission
 pytestmark = pytest.mark.django_db
 
 
+@pytest.mark.parametrize("path", ["/api/login/", "/api/demo/login/"])
+@pytest.mark.parametrize("body", ["[]", '"text"', "null", "42", "true"])
+def test_login_rejects_non_object_json(client, settings, path, body):
+    settings.DEMO_ENABLED = True
+    response = client.generic("POST", path, body, content_type="application/json")
+    assert response.status_code == 400
+    assert response.data["fields"]["non_field_errors"]
+    assert client.get("/api/session/").data["user"] is None
+
+
+@pytest.mark.parametrize("username", ["alex\x00", "a" * 151])
+def test_invalid_username_is_rejected_before_authentication(client, username):
+    with patch("workflow.views.authenticate") as authenticate:
+        response = client.post(
+            "/api/login/",
+            {"username": username, "password": "Test-password-482!"},
+            format="json",
+        )
+    assert response.status_code == 400
+    assert response.data["fields"]["username"]
+    authenticate.assert_not_called()
+
+
 def test_login_session_logout_csrf(users):
     client = APIClient(enforce_csrf_checks=True)
     response = client.get("/api/session/")

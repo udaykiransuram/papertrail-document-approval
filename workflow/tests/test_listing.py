@@ -136,6 +136,14 @@ def test_invalid_list_parameters(client, users, query):
     assert client.get(f"/api/submissions/?{query}").status_code == 400
 
 
+def test_search_rejects_null_characters(client, users):
+    # SQLite permits this value, but PostgreSQL rejects NUL in text parameters.
+    client.force_authenticate(users[0])
+    response = client.get("/api/submissions/", {"q": "proposal\x00"})
+    assert response.status_code == 400
+    assert response.data["fields"]["q"]
+
+
 def test_page_clamps_after_last_pending_item_is_reviewed(client, users):
     documents(users[0], 21)
     client.force_authenticate(users[2])

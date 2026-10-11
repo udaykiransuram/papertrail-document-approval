@@ -192,7 +192,7 @@ export function Review({
                   <p>
                     {user.is_demo
                       ? "Switch to Reviewer to read this document and make a decision."
-                      : "Morgan Reed will review your document. Your status updates here when a decision is made."}
+                      : "Morgan Reed will review your document. Return to the submissions list to check for a decision."}
                   </p>
                 )}
               </div>

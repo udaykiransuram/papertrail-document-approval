@@ -27,6 +27,8 @@ Password login request, `POST /api/login/`:
 { "username": "alex", "password": "<configured seed password>" }
 ```
 
+Both login endpoints require an object with named fields; arrays, scalars, and `null` return 400. Usernames must be at most 150 characters and cannot contain NUL characters. Invalid input never reaches authentication.
+
 Successful login response (`200`):
 
 ```json
@@ -122,7 +124,7 @@ Empty-list response:
 }
 ```
 
-For nonempty pages, `results` contains submission objects. `count` is the total matching the active status/search/owner filters, across all pages. `counts` gives each status under the active search/owner filters, before the status filter. Reviewers receive submitter summaries for owners across their permitted queue, independent of current filters; submitters receive an empty `submitters` array. Stale/out-of-range page numbers clamp to the last available page. Malformed parameters return 400.
+For nonempty pages, `results` contains submission objects. `count` is the total matching the active status/search/owner filters, across all pages. `counts` gives each status under the active search/owner filters, before the status filter. Reviewers receive submitter summaries for owners across their permitted queue, independent of current filters; submitters receive an empty `submitters` array. Stale/out-of-range page numbers clamp to the last available page. Malformed parameters and search text containing NUL characters return 400 rather than sending invalid text to a PostgreSQL search query.
 
 ## Record a decision
 
@@ -156,7 +158,7 @@ Conflict example (`409`):
 }
 ```
 
-Errors always have `message`; `code` and `fields` are optional. Authentication/CSRF failures may return only a message. DRF permission errors include codes such as `not_authenticated` or `permission_denied`, allowing the UI to distinguish an expired session from a valid session without permission.
+Application-level errors use `message`; `code` and `fields` are optional. Request limits enforced by Django or the hosting platform may return a non-JSON error; the frontend provides a fallback message for those responses. Authentication/CSRF failures may return only a message. DRF permission errors include codes such as `not_authenticated` or `permission_denied`, allowing the UI to distinguish an expired session from a valid session without permission.
 
 | Status | Meaning                                                                                    |
 | ------ | ------------------------------------------------------------------------------------------ |

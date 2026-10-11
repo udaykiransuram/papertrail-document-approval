@@ -96,7 +96,7 @@ pnpm exec playwright install chromium
 pnpm test
 ```
 
-This runs pytest, Vitest, TypeScript checking, the production build, and Playwright. The verified suite has **84 backend, 17 component, and 29 browser tests**. Cloud storage is mocked in backend tests; browser tests use their own SQLite database and local files. Neither suite needs Neon or Blob credentials.
+This runs pytest, Vitest, TypeScript checking, the production build, and Playwright. The verified suite has **97 backend, 17 component, and 29 browser tests**. Cloud storage is mocked in backend tests; browser tests use their own SQLite database and local files. Neither suite needs Neon or Blob credentials.
 
 [Testing details](docs/TESTING.md) explain coverage, individual commands, CI artifacts, and known limits. Test counts describe this revision, not a line-coverage percentage.
 

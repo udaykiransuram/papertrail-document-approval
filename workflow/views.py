@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -49,6 +51,15 @@ def session_user(user):
     }
 
 
+def object_payload(request):
+    data = request.data
+    if not isinstance(data, Mapping):
+        raise ValidationError(
+            {"non_field_errors": ["Send an object with named fields."]}
+        )
+    return data
+
+
 @method_decorator(never_cache, name="dispatch")
 class SessionView(APIView):
     permission_classes = [AllowAny]
@@ -73,7 +84,8 @@ class LoginView(APIView):
     throttle_scope = "login"
 
     def post(self, request):
-        username, password = request.data.get("username"), request.data.get("password")
+        data = object_payload(request)
+        username, password = data.get("username"), data.get("password")
         if (
             not isinstance(username, str)
             or not isinstance(password, str)
@@ -81,7 +93,11 @@ class LoginView(APIView):
             or not password
         ):
             raise ValidationError({"username": ["Enter your username and password."]})
-        user = authenticate(request, username=username[:150], password=password)
+        if len(username) > 150 or "\x00" in username:
+            raise ValidationError(
+                {"username": ["Enter a valid username of 150 characters or fewer."]}
+            )
+        user = authenticate(request, username=username, password=password)
         if user is None:
             return Response(
                 {"message": "The username or password is incorrect."}, status=401
@@ -100,7 +116,7 @@ class DemoLoginView(APIView):
     def post(self, request):
         if not settings.DEMO_ENABLED:
             return Response({"message": "Demo access is not enabled."}, status=404)
-        role = request.data.get("role")
+        role = object_payload(request).get("role")
         if not isinstance(role, str) or role not in DEMO_ACCOUNTS:
             raise ValidationError({"role": ["Choose submitter or reviewer."]})
         user = (
@@ -199,6 +215,10 @@ class SubmissionListView(APIView):
         search = request.query_params.get("q", "").strip()
         if len(search) > 200:
             raise ValidationError({"q": ["Use 200 characters or fewer."]})
+        if "\x00" in search:
+            raise ValidationError(
+                {"q": ["Search text cannot contain null characters."]}
+            )
         if search:
             queryset = queryset.filter(
                 Q(title__icontains=search) | Q(original_filename__icontains=search)
