@@ -22,7 +22,6 @@ jobs:
       DJANGO_DEBUG: "1"
       DOCUMENT_STORAGE: local
       DATABASE_URL: ""
-      TMPDIR: ${{ runner.temp }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -50,6 +49,8 @@ jobs:
         run: .venv/bin/python manage.py makemigrations --check --dry-run --settings=config.test_settings
       - name: Run the complete test suite
         shell: bash
+        env:
+          TMPDIR: ${{ runner.temp }}
         run: pnpm test 2>&1 | tee "$RUNNER_TEMP/test-output.log"
       - name: Keep test logs, screenshots and failure traces
         if: ${{ !cancelled() }}
