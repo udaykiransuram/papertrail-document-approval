@@ -452,20 +452,20 @@ export function Dashboard({
                     : "No documents awaiting review."
                   : hasFilters
                     ? "No matching documents."
-                    : "A clear space for your documents."}
+                    : "No documents yet."}
               </h2>
               <p>
                 {emptyPending
                   ? counts.all > 0
-                    ? "Every submitted document has a saved decision. You can view them below."
+                    ? "All submitted documents have a decision."
                     : user.is_demo
-                      ? "Try a sample document to explore the approval workflow."
-                      : "New submissions will appear here when they’re ready for review."
+                      ? "Try a sample document."
+                      : "New submissions will appear here."
                   : hasFilters
-                    ? "Try another search or clear your filters to see more documents."
+                    ? "Try another search or clear your filters."
                     : user.role === "submitter"
-                      ? "Submit a document and follow its progress here."
-                      : "Documents awaiting your review will appear here."}
+                      ? "Submit a document to track its progress."
+                      : "Documents for review will appear here."}
               </p>
               {emptyPending && (
                 <div className="empty-state-actions">

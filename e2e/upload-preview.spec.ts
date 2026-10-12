@@ -18,6 +18,24 @@ async function choose(page: Page, title: string, filename: string) {
     .getByRole("button", { name: "Submit document", exact: true })
     .click();
   await page.getByLabel("Document title").fill(title);
+  const outline = await page.getByLabel("Document title").evaluate((input) => {
+    const field = input.getBoundingClientRect();
+    const form = input.closest("form")!.getBoundingClientRect();
+    const style = getComputedStyle(input);
+    const extent =
+      parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+    return {
+      width: parseFloat(style.outlineWidth),
+      left: field.left - extent - form.left,
+      right: form.right - field.right - extent,
+    };
+  });
+  expect(outline.width).toBe(3);
+  expect(outline.left).toBeGreaterThanOrEqual(0);
+  expect(outline.right).toBeGreaterThanOrEqual(0);
+  await page.screenshot({
+    path: path.join(evidence, `upload-title-${page.viewportSize()!.width}.png`),
+  });
   await page
     .getByLabel("Document", { exact: true })
     .setInputFiles(fixture(filename));
@@ -57,9 +75,7 @@ test("preview stays local, cancellation creates nothing, and submission returns 
   });
   const title = "Preview then return to my list";
   await choose(page, title, "project-proposal.pdf");
-  await expect(
-    page.getByRole("heading", { name: "Preview your submission" }),
-  ).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Preview" })).toBeFocused();
   await expect(page.locator(".react-pdf__Page canvas")).toHaveCount(3);
   await expect(
     page.getByRole("button", { name: "Submit for review" }),
@@ -67,6 +83,15 @@ test("preview stays local, cancellation creates nothing, and submission returns 
   await expect(
     page.locator(".react-pdf__Page__textContent").first(),
   ).toContainText("Q4 project proposal");
+  await expect(page.getByLabel("Document size")).toHaveValue("actual");
+  await expect(page.getByText("100%", { exact: true })).toBeVisible();
+  const readingArea = await page.locator(".document-canvas").boundingBox();
+  expect(readingArea!.height / page.viewportSize()!.height).toBeGreaterThan(
+    0.7,
+  );
+  await expect(
+    page.getByRole("button", { name: "Submit for review" }),
+  ).toBeInViewport();
   await page.screenshot({
     path: path.join(evidence, "upload-preview-desktop.png"),
   });
@@ -156,6 +181,15 @@ test("mobile Word preview renders before upload and remains on the list afterwar
   await expect(
     page.getByRole("button", { name: "Submit for review" }),
   ).toBeEnabled();
+  await expect(page.getByLabel("Document size")).toHaveValue("actual");
+  await expect(page.getByText("100%", { exact: true })).toBeVisible();
+  const readingArea = await page.locator(".document-canvas").boundingBox();
+  expect(readingArea!.height / page.viewportSize()!.height).toBeGreaterThan(
+    0.55,
+  );
+  await page.screenshot({
+    path: path.join(evidence, "upload-preview-word-mobile-actual.png"),
+  });
   const before = (await page.locator("iframe").boundingBox())!.width;
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
   await expect

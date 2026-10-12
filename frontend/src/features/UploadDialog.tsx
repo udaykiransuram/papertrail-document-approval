@@ -115,17 +115,9 @@ export function UploadDialog({
     >
       <div className="dialog-header">
         <div>
-          <span className="upload-step">
-            Step {previewing ? "2" : "1"} of 2
-          </span>
           <h2 id={headingId} ref={heading} tabIndex={-1}>
-            {previewing ? "Preview your submission" : "Submit a document"}
+            {previewing ? "Preview" : "Submit a document"}
           </h2>
-          <p>
-            {previewing
-              ? "Check the document, then send it for review."
-              : "Add the details. You’ll preview the file next."}
-          </p>
         </div>
         <button
           className="icon-button"
@@ -139,25 +131,15 @@ export function UploadDialog({
       {error && <ErrorNotice message={error} />}
       {previewing && file ? (
         <div className="upload-preview-body">
-          <div className="upload-preview-title">
-            <span>Document title</span>
-            <strong>{title.trim()}</strong>
-          </div>
           <Suspense fallback={<Loading label="Preparing preview…" />}>
             <DocumentViewer file={file} onReady={setPreviewReady} />
           </Suspense>
-          <p className="form-hint">
-            {file.name.toLowerCase().endsWith(".docx")
-              ? "Word previews may differ from Microsoft Word’s exact layout."
-              : "Scroll through the pages or zoom in to check the details."}
-          </p>
         </div>
       ) : (
         <form id={formId} onSubmit={preview}>
           {demo && (
             <div className="sample-picker">
-              <strong>Start with a sample</strong>
-              <p>Choose a document below to preview before submitting.</p>
+              <strong>Sample documents</strong>
               <div>
                 <button
                   type="button"
@@ -227,11 +209,9 @@ export function UploadDialog({
         </form>
       )}
       <div className="upload-footer">
-        <p className="form-hint">
-          {previewing
-            ? "Nothing is submitted until you select Submit for review."
-            : "Your file stays on this device until you submit it."}
-        </p>
+        {previewing && file?.name.toLowerCase().endsWith(".docx") && (
+          <p className="form-hint">Word layout may differ.</p>
+        )}
         <div className="dialog-actions">
           <button
             type="button"

@@ -28,7 +28,7 @@ export default function DocumentViewer({
   const [data, setData] = useState<ArrayBuffer | null>(null);
   const [error, setError] = useState("");
   const [zoom, setZoom] = useState(100);
-  const [mode, setMode] = useState<SizingMode>(file ? "page" : "auto");
+  const [mode, setMode] = useState<SizingMode>(file ? "actual" : "auto");
   const [pageSize, setPageSize] = useState<PageSize>({
     width: 816,
     height: 1056,

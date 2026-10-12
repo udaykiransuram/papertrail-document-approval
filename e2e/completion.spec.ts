@@ -310,7 +310,8 @@ test("empty pending queue offers reviewed documents and fresh samples, but ordin
     .click();
   await expect(
     page.getByRole("dialog", { name: "Submit a document" }),
-  ).toContainText("Step 1 of 2");
+  ).toBeVisible();
+  await expect(page.getByLabel("Document title")).toBeFocused();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.getByRole("button", { name: "Switch to Reviewer" }).click();
   await expect(

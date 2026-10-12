@@ -16,8 +16,16 @@ for (const kind of ["PDF", "Word"] as const) {
     });
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: "Take a look around." }),
+      page.getByRole("heading", { name: "Try the demo" }),
     ).toBeVisible();
+    const favicon = page.locator('link[rel="icon"]');
+    await expect(favicon).toHaveAttribute("type", "image/svg+xml");
+    const iconResponse = await page.request.get(
+      (await favicon.getAttribute("href"))!,
+    );
+    expect(iconResponse.ok()).toBe(true);
+    expect(iconResponse.headers()["content-type"]).toContain("image/svg+xml");
+    expect(await iconResponse.text()).toContain("<svg");
     await expect(page.getByLabel("Username")).toBeHidden();
     await expect(
       page.getByRole("button", { name: "Sign in with an existing account" }),
@@ -57,9 +65,7 @@ for (const kind of ["PDF", "Word"] as const) {
     await page
       .getByRole("button", { name: "Preview document", exact: true })
       .click();
-    await expect(
-      page.getByRole("heading", { name: "Preview your submission" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
     await expect(
       kind === "PDF"
         ? page.locator(".react-pdf__Page canvas")
@@ -80,6 +86,8 @@ for (const kind of ["PDF", "Word"] as const) {
     await expect(
       page.getByRole("heading", { name: "Review queue" }),
     ).toBeVisible();
+    await expect(page.locator(".user-info")).toHaveText("Reviewer");
+    await expect(page.locator(".user-info small")).toHaveCount(0);
     await page.locator(".document-link").filter({ hasText: title }).click();
     const detailUrl = page.url();
     await expect(

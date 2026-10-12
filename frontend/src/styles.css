@@ -1182,7 +1182,6 @@ input::placeholder {
 .sample-picker strong {
   font-size: 13px;
 }
-.sample-picker p,
 .sample-picker > span {
   font-size: 12px;
   line-height: 1.6;
@@ -1190,6 +1189,7 @@ input::placeholder {
   margin: 6px 0 12px;
 }
 .sample-picker > div {
+  margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -2083,15 +2083,9 @@ input::placeholder {
 .upload-dialog > form {
   min-height: 0;
   overflow-y: auto;
-  padding: 4px;
-  margin: -4px;
-}
-.upload-step {
-  display: block;
-  font-size: 11px;
-  color: var(--teal);
-  font-weight: 600;
-  margin-bottom: 8px;
+  /* Leave room for the 3px focus outline and its 4px offset. */
+  padding: 8px;
+  margin: -8px;
 }
 .upload-dialog .dialog-header {
   margin-bottom: 20px;
@@ -2109,8 +2103,28 @@ input::placeholder {
   min-height: 44px;
 }
 .upload-preview-dialog[open] {
-  width: min(1080px, calc(100vw - 32px));
-  height: min(920px, calc(100dvh - 32px));
+  width: min(1200px, calc(100vw - 32px));
+  height: calc(100dvh - 32px);
+  padding: 18px;
+}
+.upload-preview-dialog .dialog-header {
+  align-items: center;
+  margin-bottom: 12px;
+}
+.upload-preview-dialog .dialog-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.upload-preview-dialog .upload-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+}
+.upload-preview-dialog .dialog-actions {
+  margin: 0 0 0 auto;
 }
 .upload-preview-body {
   display: flex;
@@ -2119,19 +2133,9 @@ input::placeholder {
   min-height: 0;
   gap: 12px;
 }
-.upload-preview-title {
-  flex-shrink: 0;
-  overflow-wrap: anywhere;
-}
-.upload-preview-title span {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  margin-bottom: 4px;
-}
-.upload-preview-title strong {
-  font-size: 14px;
-  line-height: 1.5;
+.upload-preview-dialog .viewer-toolbar {
+  min-height: 56px;
+  padding: 10px 14px;
 }
 .upload-preview-body .viewer-panel {
   display: flex;
@@ -2165,9 +2169,6 @@ input::placeholder {
 @media (max-width: 720px) {
   .upload-preview-dialog[open] {
     padding: 16px;
-  }
-  .upload-preview-dialog .dialog-header h2 {
-    font-size: 20px;
   }
   .upload-preview-body .viewer-toolbar {
     flex-wrap: wrap;

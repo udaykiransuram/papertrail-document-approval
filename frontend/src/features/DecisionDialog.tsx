@@ -68,9 +68,7 @@ export function DecisionDialog({
         {approving ? <Check size={24} /> : <X size={24} />}
       </div>
       <h2 id={titleId}>{approving ? "Approve" : "Reject"} this document?</h2>
-      <p id={descriptionId}>
-        This will mark the submission as {status}. This decision is final.
-      </p>
+      <p id={descriptionId}>This decision is final.</p>
       <div className="decision-document">
         <FileIcon name={item.original_filename} />
         <div>

@@ -140,7 +140,7 @@ The application intentionally has no registration, editing, reassignment, resubm
 
 ## AI-use disclosure
 
-OpenAI Codex assisted with architecture, implementation, tests, documentation, browser debugging, and deployment setup. Image generation was used as a visual reference during UI exploration; the shipped interface uses HTML, CSS, and icons. The bundled sample documents are synthetic. Library choices were checked against official documentation and installed interfaces. Changes were checked with automated tests and browser verification; AI assistance and the key design decisions are part of the walkthrough guide.
+OpenAI Codex assisted with architecture, implementation, tests, documentation, browser debugging, and deployment setup. Image generation informed UI exploration; the shipped interface uses HTML, CSS, and icons. The sample documents are synthetic. Library choices were checked against official documentation and installed interfaces. Automated tests and browser verification were used; the walkthrough guide covers AI assistance and key design decisions.
 
 ## Repository guide
 
@@ -155,4 +155,4 @@ OpenAI Codex assisted with architecture, implementation, tests, documentation, b
 | `scripts/`          | Local setup, build, sample generation, and the test runner                |
 | `docs/`             | API, architecture, deployment, testing, and handover documentation        |
 
-Dependency locks, migrations, tests, and required sample assets are included. Local secrets, databases, uploads, dependencies, generated builds, and test artifacts are ignored and are not part of the source handover. See the [handover checklist](docs/HANDOVER.md) for the remaining video and repository-sharing steps.
+Dependency locks, migrations, tests, and required sample assets are included. Local secrets, databases, uploads, dependencies, generated builds, and test artifacts are ignored and are not part of the source handover.

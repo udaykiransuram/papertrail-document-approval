@@ -47,21 +47,13 @@ export function Login({
     <div className={`login-page ${demoEnabled ? "has-demo" : ""}`}>
       <header className="login-header">
         <Brand />
-        <span>Document approvals, made clear.</span>
       </header>
       <main className="login-layout">
         <section className="login-story">
           <span className="story-mark" aria-hidden="true">
             <Check size={46} />
           </span>
-          <h1>
-            Good work deserves
-            <br />a clear next step.
-          </h1>
-          <p>
-            One place to submit documents, review the details, and move things
-            forward.
-          </p>
+          <h1>Submit documents. Track decisions.</h1>
           <div className="workflow-strip">
             <span>Submit</span>
             <ArrowRight size={17} />
@@ -71,10 +63,10 @@ export function Login({
           </div>
         </section>
         <section className="login-panel">
-          <h2>{demoEnabled ? "Take a look around." : "Welcome back."}</h2>
+          <h2>{demoEnabled ? "Try the demo" : "Welcome back."}</h2>
           <p>
             {demoEnabled
-              ? "Explore the full workflow. No password needed."
+              ? "Choose a role. No password needed."
               : "Sign in to your document workspace."}
           </p>
           {error && <ErrorNotice message={error} />}
@@ -91,7 +83,7 @@ export function Login({
                       ? "Opening demo…"
                       : "Try as Submitter"}
                   </strong>
-                  <small>Upload a sample and track its approval.</small>
+                  <small>Submit a sample document.</small>
                 </span>
                 <ArrowRight size={18} aria-hidden="true" />
               </button>
@@ -106,13 +98,12 @@ export function Login({
                       ? "Opening demo…"
                       : "Try as Reviewer"}
                   </strong>
-                  <small>Open a document, then approve or reject.</small>
+                  <small>Review and decide on a document.</small>
                 </span>
                 <ArrowRight size={18} aria-hidden="true" />
               </button>
               <p className="demo-disclosure">
-                Shared demo · Sample PDF and Word documents included. Use sample
-                content only. You can switch roles at any time.
+                Shared demo. Use sample files only.
               </p>
             </div>
           )}
@@ -161,17 +152,12 @@ export function Login({
             </form>
             <div className="login-note">
               <LockKeyhole size={16} aria-hidden="true" />
-              <p>
-                Use the account provided by your administrator. Your documents
-                are shared only with your reviewer.
-              </p>
+              <p>Use your assigned username and password.</p>
             </div>
           </div>
         </section>
       </main>
-      <footer className="login-footer">
-        Papertrail · A little clarity. A confident decision.
-      </footer>
+      <footer className="login-footer">Papertrail</footer>
     </div>
   );
 }

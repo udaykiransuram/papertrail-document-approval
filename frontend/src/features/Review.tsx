@@ -158,7 +158,6 @@ export function Review({
                 </h2>
                 {user.role === "reviewer" ? (
                   <>
-                    <p>Review the document before making a decision.</p>
                     <button
                       className="button primary full"
                       disabled={!previewReady}
@@ -191,8 +190,8 @@ export function Review({
                 ) : (
                   <p>
                     {user.is_demo
-                      ? "Switch to Reviewer to read this document and make a decision."
-                      : "Morgan Reed will review your document. Return to the submissions list to check for a decision."}
+                      ? "Switch to Reviewer to review this document."
+                      : "Morgan Reed will review this document."}
                   </p>
                 )}
               </div>

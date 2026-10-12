@@ -178,7 +178,6 @@ for (const failure of ["server", "network"] as const) {
         ? "storage is temporarily unavailable"
         : "Could not connect",
     );
-    await expect(page.locator(".upload-preview-title")).toContainText(title);
     await page.getByRole("button", { name: "Back to details" }).click();
     await expect(page.getByLabel("Document title")).toHaveValue(title);
     await expect(page.locator(".dropzone strong")).toHaveText(

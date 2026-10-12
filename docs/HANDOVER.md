@@ -2,8 +2,6 @@
 
 [Back to README](../README.md)
 
-Checked against the three-page **Take-home Challenge: Document Approval Workflow** brief supplied with the assignment. This checklist separates implemented functionality from delivery steps that still require the applicant.
-
 ## Requirement check
 
 | Brief requirement                                                      | Status / evidence                                                                                                                                |
@@ -31,8 +29,6 @@ Checked against the three-page **Take-home Challenge: Document Approval Workflow
 - [ ] Resolve repository visibility/sharing against the brief. If private delivery is required, use the hosting platform's invitation flow to give the specified reviewer access. The current public setting has been preserved; no invitation is implied by this checklist.
 - [ ] Send the source, live, and video links together. One-click demo access needs no password exchange. For separate account review, share configured credentials privately.
 
-No automatic email, reviewer invitation, repository visibility change, or recording is performed by this checklist.
-
 ## Five-minute walkthrough
 
 Prepare the app and repository before recording. Use a fresh synthetic title so the evaluator can follow the same record across roles. Demo role switching is fastest; use local Alex/Jamie accounts briefly to demonstrate ownership isolation.
@@ -49,15 +45,3 @@ Prepare the app and repository before recording. Use a fresh synthetic title so 
 | 4:40–5:00 | Disclose Codex assistance. Explain the 4 MB limit, Word layout trade-off, and the first production improvements.                                                |
 
 Keep credentials and environment files out of the recording. Use the architecture/API docs as reference rather than reading the entire README on screen.
-
-## Source package
-
-Share the Git repository or GitHub's source archive. The tracked source is the deliverable; do not zip the entire working directory, which contains ignored dependencies, local data, and operator configuration.
-
-The two sample locations are intentional: `workflow/samples/` is available inside the backend runtime and to browser tests; `frontend/public/samples/` is available through the static frontend. Tests check that the copies match. Redundant test-only copies were removed.
-
-A submission message can be as simple as:
-
-> Here is my Document Approval Workflow submission: [source repository](https://github.com/udaykiransuram/papertrail-document-approval) and [live demo](https://papertrail-document-approval.vercel.app/). The README includes setup, API design, trade-offs, AI-use disclosure, and the single test command. The demo supports one-click access for both roles.
-
-Add the actual walkthrough link before sending; the paragraph above is not a substitute for the required recording.

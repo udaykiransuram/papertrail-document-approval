@@ -17,6 +17,8 @@ export function Shell({
   switching?: boolean;
   children: React.ReactNode;
 }) {
+  const roleLabel = user.role === "reviewer" ? "Reviewer" : "Submitter";
+
   return (
     <div className={user.is_demo ? "app-shell demo-shell" : "app-shell"}>
       <header className="app-header">
@@ -29,10 +31,10 @@ export function Shell({
         </button>
         <span className="header-description">Document approvals</span>
         <div className="user-menu">
-          <Avatar name={user.name} />
+          <Avatar name={user.is_demo ? roleLabel : user.name} />
           <span className="user-info">
-            <strong>{user.name}</strong>
-            <small>{user.role === "reviewer" ? "Reviewer" : "Submitter"}</small>
+            <strong>{user.is_demo ? roleLabel : user.name}</strong>
+            {!user.is_demo && <small>{roleLabel}</small>}
           </span>
           <button
             className="icon-button logout"
@@ -47,9 +49,7 @@ export function Shell({
         <aside className="demo-banner" aria-label="Demo workspace">
           <p>
             <strong>Shared demo</strong>
-            <span>
-              Use sample documents. Switch roles to try both sides of a review.
-            </span>
+            <span>Use sample documents only.</span>
           </p>
           {onSwitchRole && (
             <button
@@ -65,9 +65,7 @@ export function Shell({
         </aside>
       )}
       <main className="main">{children}</main>
-      <footer className="app-footer">
-        Papertrail<span>Every document. A clear next step.</span>
-      </footer>
+      <footer className="app-footer">Papertrail</footer>
     </div>
   );
 }

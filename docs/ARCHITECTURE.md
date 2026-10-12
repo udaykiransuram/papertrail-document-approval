@@ -57,7 +57,7 @@ The same centered confirmation dialog is used by direct list actions and the doc
 ## Upload and storage lifecycle
 
 1. The submitter enters a title and selects a file.
-2. The browser renders the selected file locally. Back preserves the inputs; cancel sends nothing. An unreadable preview cannot be submitted through the UI.
+2. The browser previews the local file at 100% in a compact dialog; it has not uploaded it yet. Back returns to the details with inputs preserved; cancel sends nothing. An unreadable preview cannot be submitted through the UI.
 3. On final submission, the backend independently validates the title, number of files, size, extension, and actual document bytes.
 4. The storage adapter uploads to a random UUID path in private Blob.
 5. The service creates a pending database row owned by the signed-in user.
@@ -88,7 +88,7 @@ The workspace is shared by evaluators. New demo entry can be disabled with `DEMO
 
 - **PDF:** React-PDF with a bundled PDF.js worker. **Word:** docx-preview in a script-free sandboxed iframe, restrictive CSP, and no external resources. Word pagination/fonts may differ from Microsoft Word.
 - **Loading:** viewers are lazy-loaded. Local previews read a `File`; saved previews fetch authorized bytes. Preview retry and invalid-file replacement are explicit states.
-- **Sizing:** local previews default to Fit page. Saved documents use Automatic sizing, with Fit page, Fit width, Actual size, and manual zoom available.
+- **Sizing:** local previews default to Actual size (100%). Saved documents use Automatic sizing, with Fit page, Fit width, Actual size, and manual zoom available.
 - **Lists:** server-side pagination (20 rows), scoped counts, title/filename search, status filters, date/status sorting, and a searchable submitter filter for reviewers. Stable tie-breakers prevent duplicates across pages.
 - **Navigation:** list selections survive opening a document. Search is debounced and stale requests are cancelled. Return, window focus, and manual refresh update the list; there is no polling or websocket subscription.
 - **Accessibility:** labeled controls, keyboard submitter selection, native modal dialogs, focus restoration, and live announcements. This does not replace an independent accessibility audit.
