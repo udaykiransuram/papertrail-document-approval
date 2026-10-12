@@ -178,9 +178,7 @@ test("review next follows search, submitter and sort, then returns to the filter
         file: {
           name: "proposal.pdf",
           mimeType: "application/pdf",
-          buffer: fs.readFileSync(
-            "workflow/samples/project-proposal.pdf",
-          ),
+          buffer: fs.readFileSync("workflow/samples/project-proposal.pdf"),
         },
       },
     });
@@ -365,6 +363,9 @@ test("empty pending queue offers reviewed documents and fresh samples, but ordin
     page.getByRole("region", { name: "Review complete" }),
   ).toContainText("You’re all caught up.");
   await page.getByRole("button", { name: "Sign out" }).click();
+  await page
+    .getByRole("button", { name: "Sign in with an existing account" })
+    .click();
   await page.getByLabel("Username").fill("reviewer");
   await page
     .getByLabel("Password", { exact: true })

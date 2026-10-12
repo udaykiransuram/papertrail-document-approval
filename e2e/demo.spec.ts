@@ -18,6 +18,10 @@ for (const kind of ["PDF", "Word"] as const) {
     await expect(
       page.getByRole("heading", { name: "Take a look around." }),
     ).toBeVisible();
+    await expect(page.getByLabel("Username")).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Sign in with an existing account" }),
+    ).toHaveAttribute("aria-expanded", "false");
     if (kind === "PDF")
       await page.screenshot({
         path: path.join(evidence, "demo-login-desktop.png"),

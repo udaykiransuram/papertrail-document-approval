@@ -8,6 +8,9 @@ const password = "E2e-only-password-924!";
 const fixture = (name: string) => path.resolve("workflow/samples", name);
 async function login(page: Page, username: string) {
   await page.goto("/");
+  await page
+    .getByRole("button", { name: "Sign in with an existing account" })
+    .click();
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -307,6 +310,19 @@ for (const [name, filename] of [
 test("login errors and mobile layout", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  const toggle = page.getByRole("button", {
+    name: "Sign in with an existing account",
+  });
+  await expect(page.getByLabel("Username")).toBeHidden();
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Tab");
+  await expect(page.getByLabel("Username")).toBeFocused();
+  await page.screenshot({
+    path: path.join(evidenceDirectory, "login-expanded-mobile.png"),
+    fullPage: true,
+  });
   await page.getByLabel("Username").fill("alex");
   await page.getByLabel("Password", { exact: true }).fill("incorrect");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();

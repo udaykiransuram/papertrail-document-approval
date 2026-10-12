@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, LockKeyhole, Check } from "lucide-react";
+import { ArrowRight, ChevronDown, LockKeyhole, Check } from "lucide-react";
 import { api, messageOf } from "../api";
 import { Brand, ErrorNotice } from "../components/ui";
 import type { User } from "../types";
@@ -16,6 +16,8 @@ export function Login({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [demoRole, setDemoRole] = useState<User["role"] | null>(null);
+  const [accountExpanded, setAccountExpanded] = useState(false);
+  const showAccountLogin = !demoEnabled || accountExpanded;
   async function tryDemo(role: User["role"]) {
     setError("");
     setBusy(true);
@@ -112,44 +114,58 @@ export function Login({
                 Shared demo · Sample PDF and Word documents included. Use sample
                 content only. You can switch roles at any time.
               </p>
-              <div className="login-divider">Or sign in with your account</div>
             </div>
           )}
-          <form onSubmit={submit}>
-            <label htmlFor="username">Username</label>
-            <input
-              id="username"
-              name="username"
-              autoComplete="username"
-              autoFocus={!demoEnabled}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              required
-              maxLength={150}
-            />
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
-            <button className="button primary full" disabled={busy}>
-              {busy && !demoRole ? "Signing in…" : "Sign in"}
-              <ArrowRight size={18} />
+          {demoEnabled && (
+            <button
+              type="button"
+              className="account-sign-in-toggle"
+              aria-expanded={accountExpanded}
+              aria-controls="account-sign-in"
+              disabled={busy}
+              onClick={() => setAccountExpanded((expanded) => !expanded)}
+            >
+              <span>Sign in with an existing account</span>
+              <ChevronDown size={17} aria-hidden="true" />
             </button>
-          </form>
-          <div className="login-note">
-            <LockKeyhole size={16} />
-            <p>
-              Use the account provided by your administrator. Your documents are
-              shared only with your reviewer.
-            </p>
+          )}
+          <div id="account-sign-in" hidden={!showAccountLogin}>
+            <form onSubmit={submit}>
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                name="username"
+                autoComplete="username"
+                autoFocus={!demoEnabled}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                required
+                maxLength={150}
+              />
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+              <button className="button primary full" disabled={busy}>
+                {busy && !demoRole ? "Signing in…" : "Sign in"}
+                <ArrowRight size={18} />
+              </button>
+            </form>
+            <div className="login-note">
+              <LockKeyhole size={16} aria-hidden="true" />
+              <p>
+                Use the account provided by your administrator. Your documents
+                are shared only with your reviewer.
+              </p>
+            </div>
           </div>
         </section>
       </main>

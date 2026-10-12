@@ -63,6 +63,9 @@ for (const method of ["password", "demo"] as const) {
     if (method === "demo") await demo(page);
     else {
       await page.goto("/");
+      await page
+        .getByRole("button", { name: "Sign in with an existing account" })
+        .click();
       await page.getByLabel("Username").fill("alex");
       await page
         .getByLabel("Password", { exact: true })
@@ -85,6 +88,9 @@ for (const method of ["password", "demo"] as const) {
     if (method === "demo")
       await page.getByRole("button", { name: /Try as Submitter/ }).click();
     else {
+      await page
+        .getByRole("button", { name: "Sign in with an existing account" })
+        .click();
       await page.getByLabel("Username").fill("alex");
       await page
         .getByLabel("Password", { exact: true })

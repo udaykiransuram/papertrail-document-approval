@@ -1113,20 +1113,34 @@ input::placeholder {
   line-height: 1.6;
   margin: 4px 0 0;
 }
-.login-divider {
+.account-sign-in-toggle {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  color: var(--muted);
-  font-size: 11px;
-  margin: 12px 0 6px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: #52616d;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
 }
-.login-divider::before,
-.login-divider::after {
-  content: "";
-  height: 1px;
-  background: var(--border);
-  flex: 1;
+.account-sign-in-toggle:hover:not(:disabled) {
+  color: #204b43;
+}
+.account-sign-in-toggle svg {
+  flex-shrink: 0;
+}
+.account-sign-in-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.has-demo #account-sign-in {
+  margin-top: 20px;
 }
 .demo-banner {
   height: 58px;

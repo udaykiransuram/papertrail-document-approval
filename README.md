@@ -77,7 +77,7 @@ Open **http://127.0.0.1:8000**. After rebuilding, rerun `collectstatic` and rest
 
 ### Password accounts
 
-Use these accounts to demonstrate isolation between two submitters. Read the generated passwords from your private `.env`; they are never published in the repository.
+Select **Sign in with an existing account** to reveal the username and password fields. When demo access is disabled, the form is shown immediately. Use these accounts to demonstrate isolation between two submitters. Read the generated passwords from your private `.env`; they are never published in the repository.
 
 | Username   | Display name | Role      | Password variable        |
 | ---------- | ------------ | --------- | ------------------------ |
